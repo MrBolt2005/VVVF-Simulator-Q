@@ -39,13 +39,67 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 		{
 			class YamlMasconDataPattern // ToFromYaml
 			{
-				struct YamlMasconDataPatternMode
+				struct YamlMasconDataPatternMode // ToFromYaml
 				{
 					double FrequencyChangeRate = 60.0, MaxControlFrequency = 60.0;
 				};
 
 			public:
-				YamlMasconDataPatternMode On, Off;
+				YamlMasconDataPatternMode On{}, Off{};
+			};
+
+		public:
+			YamlMasconDataPattern Braking{}, Accelerating{};
+		};
+
+		struct YamlMinSineFrequency // ToFromYaml
+		{
+			double Accelerating = -1.0, Braking = -1.0;
+		};
+
+	public:
+		class YamlControlData // Clone, ToFromYaml
+		{
+			class YamlMovingValue
+			{
+				enum class MovingValueType:uint_fast8_t
+				{
+					Proportional, Inv_Proportional, Pow2_Exponential, Sine
+				};
+
+			public:
+				MovingValueType Type = MovingValueType::Inv_Proportional;
+				double Start = 0, StartValue = 0, End = 1, EndValue = 100, Degree = 2, CurveRate = 0;
+			};
+
+			class YamlAsync
+			{
+				class RandomModulation
+				{
+					class YamlAsyncParameterRandomValue
+					{
+						enum class YamlAsyncParameterRandomValueMode:uint_fast8_t
+						{
+							Const, Moving
+						};
+
+					public:
+						YamlAsyncParameterRandomValueMode Mode = YamlAsyncParameterRandomValueMode::Const;
+						double Constant{};
+						YamlMovingValue MovingValue{};
+					};
+
+				public:
+					YamlAsyncParameterRandomValue Range{}, Interval{};
+				};
+
+				class CarrierFrequency
+				{
+					enum class CarrierFrequencyValueMode:uint_fast8_t
+					{
+						Const, Moving, Periodic, Table
+					};
+				};
 			};
 		};
 	};
