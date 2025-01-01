@@ -18,10 +18,23 @@
 #include <clocale>
 #include <cstring>
 // Package Includes
+#include <QDebug>
 #include <QGuiApplication>
+#include <QObject>
 #include <QQmlApplicationEngine>
 
 int main(int argv, char *argv[])
 {
+	const char locUtf8[] = "UTF-8";
+	char *loc = std::setlocale(LC_ALL, NULL);
+	qDebug() << QObject::tr("Initial C locale: ") << loc != nullptr ? loc : QObject::tr("( WARNING: Locale value could not be defined )") << '\n';
+	
+	loc = std::setlocale(LC_ALL, locUtf8);
+	if (loc == nullptr)
+		qWarning() << QObject::tr("Could not define new C locale to: ") << locUtf8 << '\n';
+	else if (std::strcmp(loc, locUtf8) != 0)
+		qWarning() << QObject::tr("Could not define new C locale to: ") << locUtf8 << QObject::tr("; it was set instead to: ") << loc << '\n';
+	else
+		qDebug() << QObject::tr("Succesfully defined new C locale: ") << loc << '\n';
 	// Start up Qt Framework
 }
