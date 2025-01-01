@@ -23,11 +23,11 @@
 #include <QObject>
 #include <QQmlApplicationEngine>
 
-int main(int argv, char *argv[])
+int main(int argc, char *argv[])
 {
 	const char locUtf8[] = "UTF-8";
 	char *loc = std::setlocale(LC_ALL, NULL);
-	qDebug() << QObject::tr("Initial C locale: ") << loc != nullptr ? loc : QObject::tr("( WARNING: Locale value could not be defined )") << '\n';
+	qDebug() << QObject::tr("Initial C locale: ") << (loc != nullptr ? loc : QObject::tr("( WARNING: Locale value could not be defined )")) << '\n';
 	
 	loc = std::setlocale(LC_ALL, locUtf8);
 	if (loc == nullptr)
