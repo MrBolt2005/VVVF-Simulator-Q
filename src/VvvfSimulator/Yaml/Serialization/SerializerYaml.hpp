@@ -21,24 +21,36 @@
 // Version 1.9.1.1
 
 // Internal Includes
-
+#include "Serializer.hpp"
 // Package Includes
-//#include <rfl.hpp>
+#include <rfl/yaml.hpp>
 
 namespace VvvfSimulator::Yaml::Serialization
 {
-	// Yeah, despite this namespace being called YAML, we're actually supporting other formats here now.
-	// reflect-cpp for the win! ^.^
-
-	// Generic Interface
-	template <typename Format>
-	struct Serializer
+	template <>
+	struct Serializer<YAML::Node>
 	{
 		template <typename T>
-		static auto serialize(const T& object);
+		static YAML::Node serialize(const T& object)
+        {
+            YAML::Node node;
+            rfl::for_each(object, [&node](auto& field)
+            {
+                node[field.name] = field.get();
+            });
+            return node;
+        }
 
 		template <typename T>
-		static T deserialize(const auto& container);
+		static T deserialize(const YAML::Node& node)
+        {
+            T object;
+            rfl::for_each(object, [&node](auto& field)
+            {
+                field.set(node[field.name].as<std::decay_t<decltype(field.get())>>());
+            });
+            return object;
+        }
 	};
 }
 
