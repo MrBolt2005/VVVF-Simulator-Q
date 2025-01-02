@@ -31,7 +31,7 @@
 // Package Includes
 #include <yaml_cpp/yaml.h>
 
-namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
+namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 {
 	class YamlVvvfSoundData
 	{
@@ -294,6 +294,7 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 		std::vector<YamlControlData> AcceleratePattern{}, BrakingPattern{};
 		void sortAcceleratePattern(bool inverse);
 		void sortBrakingPattern   (bool inverse);
+		bool hasCustomPwm         ();
 
 		std::string save(std::filesystem::path Path) const;
 
