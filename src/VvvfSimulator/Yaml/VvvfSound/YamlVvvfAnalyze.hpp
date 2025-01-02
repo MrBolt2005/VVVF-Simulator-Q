@@ -200,7 +200,7 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					bool setEnabled(bool enable);
 					int  getSteps();
 					bool setSteps(int steps);
-					bool setStepsAndEnable(int steps);
+				//	bool setStepsAndEnable(int steps);
 				};
 
 				enum class PulseDataKey:uint_fast8_t
