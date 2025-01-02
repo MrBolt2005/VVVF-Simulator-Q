@@ -1,5 +1,5 @@
-#ifndef SERIALIZERYAML_HPP
-#define SERIALIZERYAML_HPP
+#ifndef SERIALIZERJSON_HPP
+#define SERIALIZERJSON_HPP
 
 /*
    Copyright © 2025 VvvfGeeks, VVVF Systems
@@ -17,41 +17,49 @@
    limitations under the License.
 */
 
-// SerializerYaml.hpp
+// SerializerJson.hpp
 // Version 1.9.1.1
 
 // Internal Includes
 #include "Serializer.hpp"
 // Package Includes
-#include <rfl/yaml.hpp>
+#include <rfl/json.hpp>
 
 namespace VvvfSimulator::Yaml::Serialization
 {
 	template <>
-	struct Serializer<YAML::Node>
+	struct Serializer<yyjson_mut_doc*>
 	{
 		template <typename T>
-		static YAML::Node serialize(const T& object)
+		static yyjson_mut_doc* serialize(const T& object)
         {
-            YAML::Node node;
-            rfl::for_each(object, [&node](auto& field)
+            yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
+            yyjson_mut_val* root = yyjson_mut_obj(doc);
+            yyjson_mut_doc_set_root(doc, root);
+
+            rfl::for_each(object, [&root, &doc](auto& field)
             {
-                node[field.name] = field.get();
+                yyjson_mut_obj_add_str(doc, root, field.name, field.get().c_str());
             });
-            return node;
+
+            return doc;
         }
 
 		template <typename T>
-		static T deserialize(const YAML::Node& node)
+		static T deserialize(yyjson_doc* doc)
         {
             T object;
-            rfl::for_each(object, [&node](auto& field)
+            yyjson_val* root = yyjson_doc_get_root(doc);
+
+            rfl::for_each(object, [&root](auto& field)
             {
-                field.set(node[field.name].as<std::decay_t<decltype(field.get())>>());
-            });
+                const char* value = yyjson_obj_get_str(root, field.name);
+                field.set(std::string(value));
+            })
+            
             return object;
         }
 	};
 }
 
-#endif // SERIALIZERYAML_HPP
+#endif // SERIALIZERJSON_HPP

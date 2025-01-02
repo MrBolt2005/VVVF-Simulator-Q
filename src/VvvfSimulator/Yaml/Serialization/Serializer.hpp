@@ -1,5 +1,5 @@
-#ifndef SERIALIZATION_HPP
-#define SERIALIZATION_HPP
+#ifndef SERIALIZER_HPP
+#define SERIALIZER_HPP
 
 /*
    Copyright © 2025 VvvfGeeks, VVVF Systems
@@ -17,7 +17,7 @@
    limitations under the License.
 */
 
-// Serialization.hpp
+// Serializer.hpp
 // Version 1.9.1.1
 
 // Internal Includes
@@ -42,4 +42,4 @@ namespace VvvfSimulator::Yaml::Serialization
 	};
 }
 
-#endif // SERIALIZATION_HPP
+#endif // SERIALIZER_HPP
