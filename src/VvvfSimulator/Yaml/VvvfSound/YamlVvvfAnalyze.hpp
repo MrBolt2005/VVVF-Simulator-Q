@@ -171,7 +171,101 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 				{
 					Sine, Saw, ModifiedSineA, ModifiedSineB, ModifiedSaw1
 				};
+
+				class PulseHarmonic
+				{
+				public:
+					enum class PulseHarmonicType:uint_fast8_t
+					{
+						Sine, Saw, Square
+					};
+
+					double Harmonic = 3.0, Amplitude = 0.2, InitialPhase = 0;
+					bool IsHarmonic Proportional = true, IsAmplitudeProportional = true;
+					PulseHarmonicType Type = PulseHarmonicType::Sine;
+				};
+
+				class DiscreteTimeConfiguration
+				{
+					int Steps = 2;
+				public:
+					enum class DiscreteTimeMode:uint_fast8_t
+					{
+						Left, Middle, Right
+					};
+
+					DiscreteTimeMode Mode = DiscreteTimeMode::Middle;
+
+					bool getEnabled();
+					bool setEnabled(bool enable);
+					int  getSteps();
+					bool setSteps(int steps);
+					bool setStepsAndEnable(int steps);
+				};
+
+				enum class PulseDataKey:uint_fast8_t
+				{
+					Bipolar, PulseWidth
+				};
+
+				PulseTypeName PulseType;
+				// PulseCount can now be a non-integer number, for the funs/lolz	~
+				double PulseCount = 1.0;
+
+			//
+			// Alternative Modes
+			//
+				static constexpr PulseAlternative__Default = 0;
+				int_fast8_t Alternative = PulseAlternative__Default;
+
+			//
+			// Flat Configurations
+			//
+				bool Shift = false, Square = false;
+
+			//
+			// Compare Base Wave
+			//
+				BaseWaveType BaseWave = BaseWaveType::Sine;
+
+			//
+			// Discrete Time Configuration
+			//
+				DiscreteTimeConfiguration DiscreteTime;
+
+			//
+			// Compare Wave Harmonics
+			//
+				std::vector<PulseHarmonic> PulseHarmonics{};
+
+			//
+			// Pulse Custom Variable
+			//
+				std::map<PulseDataKey, PulseDataValue> PulseData;
+
+				YamlPulseMode(const YamlPulseMode& YPM);
 			};
+
+			class YamlAmplitude
+			{
+			public:
+				class AmplitudeParameter
+				{
+					struct AmplitudeTableEntry
+					{
+						double Frequency{}, Amplitude{};
+					};
+				public:
+					enum class AmplitudeMode:uint_fast8_t
+					{
+						Linear, LinearPolynomial, InverseProportional, Exponential, Sine, Table
+					};
+
+					double StartFrequency  = -1.0,  StartAmplitude = -1.0,
+					         EndFrequency  = -1.0,    EndAmplitude = -1.0,
+						   CurveChangeRate =  0.0, CutOffAmplitude = -1.0, MaxAmplitude = -1.0;
+				};
+			}
 		};
 	};
 }
