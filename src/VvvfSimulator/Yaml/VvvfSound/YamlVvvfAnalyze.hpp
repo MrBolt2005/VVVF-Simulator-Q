@@ -140,6 +140,38 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 				RandomModulation RandomData;
 				CarrierFrequency CarrierWaveData;
 			};
+
+		public:
+			class YamlPulseMode // Clone
+			{
+			//	Internal components
+				class PulseDataValue // ToFromYaml, Static Clone
+				{
+					enum class PulseDataValueMode:uint_fast8_t
+					{
+						Const, Moving
+					};
+
+				public:
+					PulseDataValueMode Mode = PulseDataValueMode::Const;
+					double Constant = -1.0;
+					YamlMovingValue MovingValue;
+				};
+
+			//
+			// Fundamental Configuration
+			//
+			public:
+				enum class PulseTypeName::uint_fast8_t
+				{
+					ASYNC, SYNC, CHM, SHE, HO,
+				};
+
+				enum class BaseWaveType:uint_fast8_t
+				{
+					Sine, Saw, ModifiedSineA, ModifiedSineB, ModifiedSaw1
+				};
+			};
 		};
 	};
 }
