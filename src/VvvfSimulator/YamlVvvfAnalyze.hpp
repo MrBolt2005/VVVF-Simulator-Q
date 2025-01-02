@@ -45,11 +45,11 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 				};
 
 			public:
-				YamlMasconDataPatternMode On{}, Off{};
+				YamlMasconDataPatternMode On, Off;
 			};
 
 		public:
-			YamlMasconDataPattern Braking{}, Accelerating{};
+			YamlMasconDataPattern Braking, Accelerating;
 		};
 
 		struct YamlMinSineFrequency // ToFromYaml
@@ -69,7 +69,7 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 
 			public:
 				MovingValueType Type = MovingValueType::Inv_Proportional;
-				double Start = 0, StartValue = 0, End = 1, EndValue = 100, Degree = 2, CurveRate = 0;
+				double Start = 0.0, StartValue = 0.0, End = 1.0, EndValue = 100.0, Degree = 2.0, CurveRate = 0.0;
 			};
 
 			class YamlAsync
@@ -86,11 +86,11 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 					public:
 						YamlAsyncParameterRandomValueMode Mode = YamlAsyncParameterRandomValueMode::Const;
 						double Constant{};
-						YamlMovingValue MovingValue{};
+						YamlMovingValue MovingValue;
 					};
 
 				public:
-					YamlAsyncParameterRandomValue Range{}, Interval{};
+					YamlAsyncParameterRandomValue Range, Interval;
 				};
 
 				class CarrierFrequency
@@ -99,7 +99,46 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 					{
 						Const, Moving, Periodic, Table
 					};
+
+					class YamlAsyncParameterCarrierFreqPeriodic
+					{
+						class YamlAsyncParameterPeriodicValue 
+						{
+							enum class YamlAsyncParameterPeriodicMode:uint_fast8_t
+							{
+								Const, Moving
+							};
+
+						public:
+							YamlAsyncParameterPeriodicMode Mode = YamlAsyncParameterPeriodicMode::Const;
+							double Constant = -1.0;
+							YamlMovingValue MovingValue;
+						};
+
+					public:
+						YamlAsyncParameterPeriodicValue Highest, Lowest, Interval;
+						bool Continuous = true;
+					};
+
+					struct YamlAsyncParameterCarrierFreqTableValue
+					{
+						double ControlFrequencyFrom = -1.0, CarrierFrequency = 1000.0;
+						bool   FreeRunStuckAtHere   = false;
+					};
+				public:
+					double Constant = -1.0;
+					YamlMovingValue MovingValue;
+					YamlAsyncParameterCarrierFreqPeriodic PeriodicData;
+					// the original .NET code used a class to store the table inside of:
+					std::vector<YamlAsyncParameterCarrierFreqTableValue> CarrierFrequencyTable;
+					CarrierFrequencyValueMode Mode = CarrierFrequencyValueMode::Const;
+
+					CarrierFrequency(const CarrierFrequency& CF);
 				};
+
+			public:
+				RandomModulation RandomData;
+				CarrierFrequency CarrierWaveData;
 			};
 		};
 	};
