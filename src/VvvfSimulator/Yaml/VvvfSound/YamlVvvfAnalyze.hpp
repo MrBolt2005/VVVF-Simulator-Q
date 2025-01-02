@@ -266,10 +266,37 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 						   CurveChangeRate =  0.0, CutOffAmplitude = -1.0,
 						     MaxAmplitude  = -1.0,    Polynomial   =  0.0;
 					std::vector<AmplitudeTableEntry> AmplitudeTable{};
-					AmplitudeMode Mode              = AmplitudeMode::Linear;
-					bool          DisableRangeLimit = false, AmplitudeTableInterpolation = false;
+					AmplitudeMode Mode               = AmplitudeMode::Linear;
+					bool DisableRangeLimit           = false,
+					     AmplitudeTableInterpolation = false;
 				};
-			}
+
+				AmplitudeParameter Default, PowerOn, PowerOff;
+			};
+
+			double ControlFrequencyFrom = -1.0,
+			       RotateFrequencyFrom  = -1.0,
+				   RotateFrequencyBelow = -1.0;
+			bool   EnableFreeRunOn      =  true,
+			       StuckFreeRunOn       = false,
+				   EnableFreeRunOff     =  true,
+			       StuckFreeRunOff      = false,
+				   EnableNormal         =  true;
+
+			YamlPulseMode PulseMode;
+			YamlAmplitude Amplitude;
+			YamlAsync     AsyncModulationData;
 		};
+
+		int_fast8_t Level = 2;
+		YamlMasconData MasconData;
+		YamlMinSineFrequency MinimumFrequency;
+		std::vector<YamlControlData> AcceleratePattern{}, BrakingPattern{};
+		void sortAcceleratePattern(bool inverse);
+		void sortBrakingPattern   (bool inverse);
+
+		std::string save(std::filesystem::path Path) const;
+
+		std::string load(std::filesystem::path Path);
 	};
 }
