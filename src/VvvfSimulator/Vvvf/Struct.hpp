@@ -21,7 +21,10 @@
 // Version 1.9.1.1
 
 // Internal Includes
+#include "InternalMath.hpp"
 #include "Namespace_VVVF.h"
+#include "../random/xoshiro256.hpp"
+#include "../Yaml/VvvfSound/YamlVvvfAnalyze.hpp"
 // Standard Library Includes
 #include <cinttypes>
 #include <map>
