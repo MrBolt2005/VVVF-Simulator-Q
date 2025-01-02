@@ -215,8 +215,44 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			//
 			// Alternative Modes
 			//
-				static constexpr PulseAlternative__Default = 0;
-				int_fast8_t Alternative = PulseAlternative__Default;
+				enum class PulseAlternative:int_fast8_t
+				{
+					Default =  0,
+					Shifted = -1,
+					CP      = -2,
+					Square  = -3,
+					Alt1    =  1,
+					Alt2    =  2,
+					Alt3    =  3,
+					Alt4    =  4,
+					Alt5    =  5,
+					Alt6    =  6,
+					Alt7    =  7,
+					Alt8    =  8,
+					Alt9    =  9,
+					Alt10   =  10,
+					Alt11   =  11,
+					Alt12   =  12,
+					Alt13   =  13,
+					Alt14   =  14,
+					Alt15   =  15,
+					Alt16   =  16,
+					Alt17   =  17,
+					Alt18   =  18,
+					Alt19   =  19,
+					Alt20   =  20,
+					Alt21   =  21,
+					Alt22   =  22,
+					Alt23   =  23,
+					Alt24   =  24,
+					Alt25   =  25,
+					Alt26   =  26,
+					Alt27   =  27,
+					Alt28   =  28,
+					Alt29   =  29,
+					Alt30   =  30,
+				}
+				PulseAlternative Alternative = PulseAlternative::Default;
 
 			//
 			// Flat Configurations
