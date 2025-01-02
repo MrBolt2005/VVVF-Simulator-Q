@@ -26,6 +26,8 @@
 #include <cinttypes>
 #include <cmath>
 #include <functional>
+// Package Includes
+#include <QVector>
 
 namespace NAMESPACE_VVVF::InternalMath
 {
@@ -69,7 +71,40 @@ namespace NAMESPACE_VVVF::InternalMath
 
 	namespace EquationSolver
 	{
-		
+		using std::function<double(double)> Function;
+		enum class EquationSolverType
+		{
+			Newton, Bissection
+		};
+		class Point2d
+		{
+		public:
+			       double X{}, Y{};
+			inline bool isZero() const
+			{
+				return std::fabs(X) == 0 && std::fabs(Y) == 0;
+			}
+			inline static Point2d operator +(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(a.X + b.X, a.Y + b.Y);
+			}
+			inline static Point2d operator -(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(a.X - b.X, a.Y - b.Y);
+			}
+			inline static Point2d operator *(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(a.X * b.X, a.Y * b.Y);
+			}
+			inline static Point2d operator /(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(a.X / b.X, a.Y / b.Y);
+			}
+		}
+
+		calculateNewtonMethod   (Function function, double dx, double begin, double tolerance, size_t n);
+		calculateBisectionMethod(Function function, double begin, double tolerance, size_t N);
+		calculateLagrangePolynomial(double x, QVector)
 	}
 }
 
