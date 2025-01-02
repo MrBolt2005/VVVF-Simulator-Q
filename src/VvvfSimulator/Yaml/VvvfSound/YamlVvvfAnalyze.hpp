@@ -263,7 +263,8 @@ namespace VvvfSimulator::Yaml::VvvfSound // C++17 Nested Namespace Notation
 
 					double StartFrequency  = -1.0,  StartAmplitude = -1.0,
 					         EndFrequency  = -1.0,    EndAmplitude = -1.0,
-						   CurveChangeRate =  0.0, CutOffAmplitude = -1.0, MaxAmplitude = -1.0;
+						   CurveChangeRate =  0.0, CutOffAmplitude = -1.0,
+						     MaxAmplitude  = -1.0,    Polynomial   =  0.0;
 				};
 			}
 		};
