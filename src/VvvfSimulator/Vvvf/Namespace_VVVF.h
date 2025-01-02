@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-// Namespace_YamlVvvfSound.h
+// Namespace_VVVF.h
 // Version 1.9.1.1
 
 #define NAMESPACE_VVVF VvvfSimulator::Vvvf
