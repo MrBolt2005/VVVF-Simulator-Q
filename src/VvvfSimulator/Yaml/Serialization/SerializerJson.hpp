@@ -22,6 +22,8 @@
 
 // Internal Includes
 #include "Serializer.hpp"
+// Standard Library Includes
+#include <string>
 // Package Includes
 #include <rfl/json.hpp>
 
@@ -32,33 +34,33 @@ namespace VvvfSimulator::Yaml::Serialization
 	{
 		template <typename T>
 		static yyjson_mut_doc* serialize(const T& object)
-        {
-            yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
-            yyjson_mut_val* root = yyjson_mut_obj(doc);
-            yyjson_mut_doc_set_root(doc, root);
+		{
+			yyjson_mut_doc* doc = yyjson_mut_doc_new(nullptr);
+			yyjson_mut_val* root = yyjson_mut_obj(doc);
+			yyjson_mut_doc_set_root(doc, root);
 
-            rfl::for_each(object, [&root, &doc](auto& field)
-            {
-                yyjson_mut_obj_add_str(doc, root, field.name, field.get().c_str());
-            });
-
-            return doc;
-        }
+			rfl::for_each(object, [&root, &doc](auto& field)
+			{
+				yyjson_mut_obj_add_str(doc, root, field.name, field.get().c_str());
+			});
+			
+			return doc;
+		}
 
 		template <typename T>
 		static T deserialize(yyjson_doc* doc)
-        {
-            T object;
-            yyjson_val* root = yyjson_doc_get_root(doc);
+		{
+			T object;
+			yyjson_val* root = yyjson_doc_get_root(doc);
 
-            rfl::for_each(object, [&root](auto& field)
-            {
-                const char* value = yyjson_obj_get_str(root, field.name);
-                field.set(std::string(value));
-            })
-            
-            return object;
-        }
+			rfl::for_each(object, [&root](auto& field)
+			{
+				const char* value = yyjson_obj_get_str(root, field.name);
+				field.set(std::string(value));
+			});
+			
+			return object;
+		}
 	};
 }
 
