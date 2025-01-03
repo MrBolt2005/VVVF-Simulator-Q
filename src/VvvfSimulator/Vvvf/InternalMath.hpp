@@ -50,8 +50,8 @@ namespace NAMESPACE_VVVF::InternalMath
 	{
 		static std::function<double(double)> _sine = std::sin;
 	public:
-		       static double saw(double x);
-		inline static double sine(double x)
+		       static double saw   (double x);
+		inline static double sine  (double x)
 		{
 			return _sine(x);
 		}
@@ -63,7 +63,10 @@ namespace NAMESPACE_VVVF::InternalMath
 
 		enum class SineFunctions:uint_fast8_t
 		{
-			StandardLibrary, InternalFastSine, QtFastSine
+			GetFail          = -1,
+			StandardLibrary  =  0,
+			InternalFastSine =  1,
+			QtFastSine       =  2
 		}
 		
 		static bool          setSineFunction(SineFunctions newSetting);
@@ -113,7 +116,7 @@ namespace NAMESPACE_VVVF::InternalMath
 
 		calculateNewtonMethod      (Function function, double dx, double begin, double tolerance, unsigned n);
 		calculateBisectionMethod   (Function function, double begin, double tolerance, unsigned N);
-		calculateLagrangePolynomial(double x, QVector<Point2d> points);
+		calculateLagrangePolynomial(double x, const QVector<Point2d>& points);
 	}
 }
 
