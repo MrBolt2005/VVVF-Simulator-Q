@@ -23,6 +23,7 @@
 // Internal Includes
 #include "Namespace_VVVF.h"
 // Standard Library Includes
+#include <algorithm>
 #include <cinttypes>
 #include <cmath>
 #include <functional>
@@ -99,6 +100,14 @@ namespace NAMESPACE_VVVF::InternalMath
 			inline static Point2d operator /(const Point2d& a, const Point2d& b)
 			{
 				return Point2d(a.X / b.X, a.Y / b.Y);
+			}
+			inline static Point2d max(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(std::max(a.X, b.X), std::max(a.Y, b.Y));
+			}
+			inline static Point2d min(const Point2d& a, const Point2d& b)
+			{
+				return Point2d(std::min(a.X, b.X), std::min(a.Y, b.Y));
 			}
 		}
 
