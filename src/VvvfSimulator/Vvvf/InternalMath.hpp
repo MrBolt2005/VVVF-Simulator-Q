@@ -80,7 +80,8 @@ namespace NAMESPACE_VVVF::InternalMath
 		class Point2d
 		{
 		public:
-			       double X{}, Y{};
+			double X{}, Y{};
+			Point2d(double x = 0.0, double y = 0.0) : X(x), Y(y) {}
 			inline bool isZero() const
 			{
 				return std::fabs(X) == 0 && std::fabs(Y) == 0;
@@ -111,8 +112,8 @@ namespace NAMESPACE_VVVF::InternalMath
 			}
 		}
 
-		calculateNewtonMethod   (Function function, double dx, double begin, double tolerance, size_t n);
-		calculateBisectionMethod(Function function, double begin, double tolerance, size_t N);
+		calculateNewtonMethod      (Function function, double dx, double begin, double tolerance, unsigned n);
+		calculateBisectionMethod   (Function function, double begin, double tolerance, unsigned N);
 		calculateLagrangePolynomial(double x, QVector<Point2d> points);
 	}
 }
