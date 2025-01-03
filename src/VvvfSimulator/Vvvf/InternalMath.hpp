@@ -32,15 +32,15 @@
 
 namespace NAMESPACE_VVVF::InternalMath
 {
-	constexpr double M_2_PI = 0.63661977236;
-	constexpr double M_1_PI = 0.31830988618;
-	constexpr double M_1_2PI = 0.15915494309;
-	constexpr double M_2PI = 6.28318530717;
-	constexpr double M_PI = 3.14159265358;
-	constexpr double M_PI_2 = 1.57079632679;
-	constexpr double M_PI_3 = 1.04719755119;
-	constexpr double M_PI_4 = 0.78539816339;
-	constexpr double M_PI_6 = 0.52359877559;
+	constexpr double M_2_PI   = std::M_2_PI;   // 0.63661977236
+	constexpr double M_1_PI   = std::M_1_PI;   // 0.31830988618
+	constexpr double M_1_2PI  = 0.15915494309;
+	constexpr double M_2PI    = 6.28318530717;
+	constexpr double M_PI     = std::M_PI;     // 3.14159265358
+	constexpr double M_PI_2   = std::M_PI_2;   // 1.57079632679
+	constexpr double M_PI_3   = 1.04719755119;
+	constexpr double M_PI_4   = std::M_PI_4;   // 0.78539816339
+	constexpr double M_PI_6   = 0.52359877559;
 	constexpr double M_PI_180 = 0.01745329251;
 
 	constexpr double M_SQRT3 = 1.73205080757;
