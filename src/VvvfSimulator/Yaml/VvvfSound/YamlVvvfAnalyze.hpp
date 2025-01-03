@@ -33,22 +33,20 @@
 
 namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 {
-	class YamlVvvfSoundData
+	struct YamlVvvfSoundData
 	{
-		class YamlMasconData // ToFromYaml
+		struct YamlMasconData // ToFromYaml
 		{
-			class YamlMasconDataPattern // ToFromYaml
+			struct YamlMasconDataPattern // ToFromYaml
 			{
 				struct YamlMasconDataPatternMode // ToFromYaml
 				{
 					double FrequencyChangeRate = 60.0, MaxControlFrequency = 60.0;
 				};
 
-			public:
 				YamlMasconDataPatternMode On, Off;
 			};
 
-		public:
 			YamlMasconDataPattern Braking, Accelerating;
 		};
 
@@ -57,65 +55,59 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			double Accelerating = -1.0, Braking = -1.0;
 		};
 
-	public:
-		class YamlControlData // Clone, ToFromYaml
+		struct YamlControlData // Clone, ToFromYaml
 		{
-			class YamlMovingValue
+			struct YamlMovingValue
 			{
 				enum class MovingValueType:uint_fast8_t
 				{
 					Proportional, Inv_Proportional, Pow2_Exponential, Sine
 				};
 
-			public:
 				MovingValueType Type = MovingValueType::Inv_Proportional;
 				double Start = 0.0, StartValue = 0.0, End = 1.0, EndValue = 100.0, Degree = 2.0, CurveRate = 0.0;
 			};
 
-			class YamlAsync
+			struct YamlAsync
 			{
-				class RandomModulation
+				struct RandomModulation
 				{
-					class YamlAsyncParameterRandomValue
+					struct YamlAsyncParameterRandomValue
 					{
 						enum class YamlAsyncParameterRandomValueMode:uint_fast8_t
 						{
 							Const, Moving
 						};
 
-					public:
 						YamlAsyncParameterRandomValueMode Mode = YamlAsyncParameterRandomValueMode::Const;
 						double Constant{};
 						YamlMovingValue MovingValue;
 					};
 
-				public:
 					YamlAsyncParameterRandomValue Range, Interval;
 				};
 
-				class CarrierFrequency
+				struct CarrierFrequency
 				{
 					enum class CarrierFrequencyValueMode:uint_fast8_t
 					{
 						Const, Moving, Periodic, Table
 					};
 
-					class YamlAsyncParameterCarrierFreqPeriodic
+					struct YamlAsyncParameterCarrierFreqPeriodic
 					{
-						class YamlAsyncParameterPeriodicValue 
+						struct YamlAsyncParameterPeriodicValue 
 						{
 							enum class YamlAsyncParameterPeriodicMode:uint_fast8_t
 							{
 								Const, Moving
 							};
 
-						public:
 							YamlAsyncParameterPeriodicMode Mode = YamlAsyncParameterPeriodicMode::Const;
 							double Constant = -1.0;
 							YamlMovingValue MovingValue;
 						};
 
-					public:
 						YamlAsyncParameterPeriodicValue Highest, Lowest, Interval;
 						bool Continuous = true;
 					};
@@ -125,7 +117,6 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 						double ControlFrequencyFrom = -1.0, CarrierFrequency = 1000.0;
 						bool   FreeRunStuckAtHere   = false;
 					};
-				public:
 					double Constant = -1.0;
 					YamlMovingValue MovingValue;
 					YamlAsyncParameterCarrierFreqPeriodic PeriodicData;
@@ -136,13 +127,11 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					CarrierFrequency(const CarrierFrequency& CF);
 				};
 
-			public:
 				RandomModulation RandomData;
 				CarrierFrequency CarrierWaveData;
 			};
 
-		public:
-			class YamlPulseMode // Clone
+			struct YamlPulseMode // Clone
 			{
 			//	Internal components
 				class PulseDataValue // ToFromYaml, Static Clone
@@ -152,7 +141,6 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 						Const, Moving
 					};
 
-				public:
 					PulseDataValueMode Mode = PulseDataValueMode::Const;
 					double Constant = -1.0;
 					YamlMovingValue MovingValue;
@@ -161,7 +149,6 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			//
 			// Fundamental Configuration
 			//
-			public:
 				enum class PulseTypeName::uint_fast8_t
 				{
 					ASYNC, SYNC, CHM, SHE, HO,
@@ -172,9 +159,8 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					Sine, Saw, ModifiedSineA, ModifiedSineB, ModifiedSaw1
 				};
 
-				class PulseHarmonic
+				struct PulseHarmonic
 				{
-				public:
 					enum class PulseHarmonicType:uint_fast8_t
 					{
 						Sine, Saw, Square
@@ -282,16 +268,14 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 				YamlPulseMode(const YamlPulseMode& YPM);
 			};
 
-			class YamlAmplitude
+			struct YamlAmplitude
 			{
-			public:
-				class AmplitudeParameter
+				struct AmplitudeParameter
 				{
 					struct AmplitudeTableEntry
 					{
 						double Frequency{}, Amplitude{};
 					};
-				public:
 					enum class AmplitudeMode:uint_fast8_t
 					{
 						Linear, LinearPolynomial, InverseProportional, Exponential, Sine, Table

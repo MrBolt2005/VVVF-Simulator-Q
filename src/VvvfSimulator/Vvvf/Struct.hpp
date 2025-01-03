@@ -44,11 +44,10 @@ namespace NAMESPACE_VVVF::Struct
 		double baseFrequency, range, interval;
 	};
 
-	class VvvfValues
+	struct VvvfValues
 	{
 		using VvvfSimulator::random::xoshiro256ss;
 	
-	public:
 		double controlFrequency  = 0.0;
 		double freeFreqChange    = 0.0;
 		bool   brake             = false;
@@ -93,7 +92,7 @@ namespace NAMESPACE_VVVF::Struct
 		VvvfValues(const VvvfValues& control);
 	};
 
-	class PwmCalculateValues
+	struct PwmCalculateValues
 	{
 		YamlPulseMode pulseMode;
 		CarrierFreq carrier = { 100.0, 0.0, 0.0005 };

@@ -77,9 +77,8 @@ namespace NAMESPACE_VVVF::InternalMath
 		{
 			Newton, Bissection
 		};
-		class Point2d
+		struct Point2d
 		{
-		public:
 			double X{}, Y{};
 			Point2d(double x = 0.0, double y = 0.0) : X(x), Y(y) {}
 			inline bool isZero() const
