@@ -74,3 +74,18 @@ SineFunctions NAMESPACE_VVVF::InternalMath::Functions::setSineFunction()
 		return GetFail;
 	};
 }
+
+NAMESPACE_VVVF::InternalMath::EquationSolver::NewtonMethod::calculate(double begin, double tolerance, unsigned n)
+{
+	tolerance = std::fabs(tolerance);
+	double x = begin;
+	for (auto i = n; i > 0; i--)
+	{
+		double pre_x = x;
+		x = getZeroIntersect(x);
+		if (pre_x == x || std::isnan(x) || std::isinf(x)) x = pre_x + dx;
+		double fx = std::fabs(function(x));
+		if (fx < tolerance) return x;
+	}
+	return x;
+}

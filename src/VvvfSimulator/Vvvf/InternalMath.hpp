@@ -61,7 +61,7 @@ namespace NAMESPACE_VVVF::InternalMath
 			return getSineFunction() == SineFunctions::StandardLibrary ? std::cos(x) : _sine(x + M_PI_4);
 		}
 
-		enum class SineFunctions:uint_fast8_t
+		enum class SineFunctions
 		{
 			GetFail          = -1,
 			StandardLibrary  =  0,
@@ -114,9 +114,32 @@ namespace NAMESPACE_VVVF::InternalMath
 			}
 		}
 
-		calculateNewtonMethod      (Function function, double dx, double begin, double tolerance, unsigned n);
-		calculateBisectionMethod   (Function function, double begin, double tolerance, unsigned N);
-		calculateLagrangePolynomial(double x, const QVector<Point2d>& points);
+		class NewtonMethod
+		{
+			double getDerivative(double x)
+			{
+				double Fxdx = function(x + dx);
+				double Fx = function(x);
+				double Dy = Fxdx - Fx;
+				double Dx = dx;
+				double Derivative = Dy / Dx;
+				return Derivative;
+			}
+
+			double getZeroIntersect(double x)
+			{
+				return -function(x) / getDerivative(x) + x;
+			}
+			
+		public:
+			Function function;
+			double dx{};
+			NewtonMethod(Function fun, double d) : function(fun), dx(d) {}
+
+			double calculate(double begin, double tolerance, unsigned n); 
+		};
+		double calculateBisectionMethod   (Function function, double begin, double tolerance, unsigned N);
+		double calculateLagrangePolynomial(double x, const QVector<Point2d>& points);
 	}
 }
 
