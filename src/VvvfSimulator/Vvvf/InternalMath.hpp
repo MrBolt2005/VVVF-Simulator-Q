@@ -113,7 +113,7 @@ namespace NAMESPACE_VVVF::InternalMath
 
 		calculateNewtonMethod   (Function function, double dx, double begin, double tolerance, size_t n);
 		calculateBisectionMethod(Function function, double begin, double tolerance, size_t N);
-		calculateLagrangePolynomial(double x, QVector)
+		calculateLagrangePolynomial(double x, QVector<Point2d> points);
 	}
 }
 
