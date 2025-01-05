@@ -138,7 +138,13 @@ namespace NAMESPACE_VVVF::InternalMath
 
 			double calculate(double begin, double tolerance, unsigned n); 
 		};
-		double calculateBisectionMethod   (Function function, double begin, double tolerance, unsigned N);
+		struct BisectionMethod
+		{
+			Function function;
+			BisectionMethod(Function fun) : function(fun) {}
+
+			double calculate(double begin, double tolerance, unsigned N);
+		};
 		double calculateLagrangePolynomial(double x, const QVector<Point2d>& points);
 	}
 }
