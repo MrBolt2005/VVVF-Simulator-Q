@@ -22,6 +22,7 @@
 
 // Internal Includes
 #include "Namespace_YamlVvvfSound.h"
+#include "../RflCppFormats.hpp"
 // Standard Library Includes
 #include <cinttypes>
 #include <filesystem>
@@ -316,8 +317,8 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 		void sortBrakingPattern   (bool inverse);
 		bool hasCustomPwm         ();
 
-		std::string save(std::filesystem::path Path) const;
+		std::string save(RflCppFormats format, std::filesystem::path Path) const;
 
-		std::string load(std::filesystem::path Path);
+		std::string load(RflCppFormats format, std::filesystem::path Path);
 	};
 }
