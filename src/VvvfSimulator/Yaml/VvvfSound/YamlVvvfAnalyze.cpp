@@ -35,7 +35,7 @@ namespace NAMESPACE_YAMLVVVFSOUND
 			switch (format)
 			{
 			case RflCppFormats::JSON:
-				rfl::json::save(Path, *this);
+				rfl::json::save(Path, *this, rfl::json::pretty);
 				break;
 			default: // RflCppFormats::YAML
 				rfl::yaml::save(Path, *this);
