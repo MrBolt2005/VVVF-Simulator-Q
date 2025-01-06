@@ -28,23 +28,15 @@
 
 namespace NAMESPACE_YAMLVVVFSOUND
 {
-	std::optional<std::exception> YamlVvvfSoundData::save (RflCppFormats format, std::filesystem::path Path) const
+	rfl::Result<Nothing> YamlVvvfSoundData::save (RflCppFormats format, std::filesystem::path Path) const
 	{
-		try
+	switch (format)
 		{
-			switch (format)
-			{
-			case RflCppFormats::JSON:
-				rfl::json::save(Path, *this, rfl::json::pretty);
-				break;
-			default: // RflCppFormats::YAML
-				rfl::yaml::save(Path, *this);
-			}
+		case RflCppFormats::JSON:
+			return rfl::json::save(Path, *this, rfl::json::pretty);
+			break;
+		default: // RflCppFormats::YAML
+			return rfl::yaml::save(Path, *this);
 		}
-		catch (std::exception& Exception)
-		{
-			return Exception;
-		}
-		return std::nullopt;
 	}
 }

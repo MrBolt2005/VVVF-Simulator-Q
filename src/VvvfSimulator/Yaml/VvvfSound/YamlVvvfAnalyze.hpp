@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 // Package Includes
-#include <yaml_cpp/yaml.h>
+#include <rfl/Result.hpp>
 
 namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 {
@@ -319,8 +319,8 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 		void sortBrakingPattern   (bool inverse);
 		bool hasCustomPwm         ();
 
-		std::optional<std::exception> save(RflCppFormats format, std::filesystem::path Path) const;
+		rfl::Result<Nothing> save(RflCppFormats format, std::filesystem::path Path) const;
 
-		std::optional<std::exception> load(RflCppFormats format, std::filesystem::path Path);
+		rfl::Result<Nothing> load(RflCppFormats format, std::filesystem::path Path);
 	};
 }
