@@ -37,7 +37,7 @@ namespace NAMESPACE_YAMLVVVFSOUND
 			*this = result.value();
 		else
 		{
-			qCritical(result.error().value());
+			qCritical("%s\n", result.error().value());
 			QMessageBox::critical(nullptr, QObject::tr(Error), result.error().value());
 		}
 	}
