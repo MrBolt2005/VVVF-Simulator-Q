@@ -37,7 +37,7 @@ namespace NAMESPACE_YAMLVVVFSOUND
 			*this = result.value();
 		else
 		{
-			qCritical("%s\n", result.error().value());
+			qCritical("%s: %s\n", typeid(YamlVvvfSoundData::YamlVvvfSoundData(RflCppFormats, std::filesystem::path)).name(), result.error().value());
 			QMessageBox::critical(nullptr, QObject::tr(Error), result.error().value());
 		}
 	}
