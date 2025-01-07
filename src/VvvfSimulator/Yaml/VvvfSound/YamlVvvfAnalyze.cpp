@@ -22,12 +22,26 @@
 // Standard Library Includes
 #include <fstream>
 // Package Includes
+#include <QMessageBox>
+#include <QtLogging>
 #include <rfl.hpp>
 #include <rfl/json.hpp>
 #include <rfl/yaml.hpp>
 
 namespace NAMESPACE_YAMLVVVFSOUND
 {
+	YamlVvvfSoundData(RflCppFormats format, std::filesystem::path Path)
+	{
+		const rfl::Result<YamlVvvfSoundData> result = load(format, Path);
+		if (result)
+			*this = result.value();
+		else
+		{
+			qCritical(result.error().value());
+			QMessageBox::critical(nullptr, QObject::tr(Error), result.error().value());
+		}
+	}
+	
 	rfl::Result<Nothing> YamlVvvfSoundData::save (RflCppFormats format, std::filesystem::path Path) const
 	{
 	switch (format)

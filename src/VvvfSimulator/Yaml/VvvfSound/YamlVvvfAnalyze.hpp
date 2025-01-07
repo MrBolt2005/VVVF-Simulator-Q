@@ -319,8 +319,10 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 		void sortBrakingPattern   (bool inverse);
 		bool hasCustomPwm         ();
 
-		rfl::Result<Nothing> save(RflCppFormats format, std::filesystem::path Path) const;
+		YamlVvvfSoundData(RflCppFormats format, std::filesystem::path Path);
+		
+		rfl::Result<Nothing>           save(RflCppFormats format, std::filesystem::path Path) const;
 
-		rfl::Result<Nothing> load(RflCppFormats format, std::filesystem::path Path);
+		rfl::Result<YamlVvvfSoundData> load(RflCppFormats format, std::filesystem::path Path);
 	};
 }
