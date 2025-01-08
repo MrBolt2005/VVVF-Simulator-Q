@@ -21,7 +21,8 @@
 
 // Standard Library Includes
 #include <array>
-#include <cstring>
+#include <expected>
+#include <type_traits>
 #include <typeinfo>
 
 #if __has_include(<cxxabi.h>)
@@ -29,6 +30,7 @@
 #endif // __has_include(<cxxabi.h>)
 
 #if __has_include(<dbghelp.h>)
+#include <cstring>
 #include <dbghelp.h>
 #pragma comment(lib, "dbghelp.lib")
 #endif // __has_include(<dbghelp.h>)
@@ -39,22 +41,34 @@
 
 namespace VvvfSimulator::Logging
 {
-	template <typename Callable>
-	std::string getDemangledCallableSignature(Callable callable, int *status = nullptr)
+	template <typename Callable, typename = std::enable_if_t<std::is_invocable_v<Callable>>>
+	std::expected<std::string, int> getDemangledCallableSignature(Callable callable)
 	{
 		#if __has_include(<windows.h>) && __has_include(<dbghelp.h>)
 		// Code for the MSVC ABI
 		std::array<char, 256> demangledName_arr;
-		UnDecorateSymbolName(typeid(callable).name(), demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
-		return std::string(demangledName_arr);
+		const auto mangledName = typeid(callable).name();
+		UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
+		return std::strnlen(demangledName_arr, demangledName_arr.size()) >= demangledName_arr.size() ?
+			std::string(demangledName_arr) : mangledName;
 		#elif __has_include(<cxxabi.h>)
 		// Code for the libstdc++ ABI
-		if (!status)
+		int status;
+		auto demangledName_c_str = abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, status);
+		if (status == 0)
 		{
-			int _status;
-			status = &_status;
+			std::string demangledName(demangledName_c_str);
+			std::free(demangledName_c_str);
+			// Definitely **not** needed, but maybe we could play it safe anyways and it still has "negligible" runtime costs, whatsoever:
+			//demangledName_c_str = nullptr;
+			return demangledName;
 		}
-		return abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, status);
+		else
+		{
+			std::free(demangledName_c_str);
+			//demangledName_c_str = nullptr;
+			return status;
+		}
 		#else
 		// This should not happen(!)
 		return typeid(callable).name();
