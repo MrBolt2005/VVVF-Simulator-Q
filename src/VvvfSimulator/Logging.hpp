@@ -49,9 +49,9 @@ namespace VvvfSimulator::Logging
 		std::array<char, 256> demangledName_arr;
 		const auto mangledName = typeid(callable).name();
 		int result = UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
-			if (result != 0 && result < demangledName_arr.size())
-				return std::string(demangledName_arr);
-			else return result;
+		if (result != 0 && result < demangledName_arr.size())
+			return std::string(demangledName_arr);
+		else return result;
 		#elif __has_include(<cxxabi.h>)
 		// Code for the libstdc++ ABI
 		int status;
