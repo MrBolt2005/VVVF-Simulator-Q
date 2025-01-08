@@ -22,6 +22,7 @@
 // Standard Library Includes
 #include <array>
 #include <expected>
+#include <string>
 #include <type_traits>
 #include <typeinfo>
 
