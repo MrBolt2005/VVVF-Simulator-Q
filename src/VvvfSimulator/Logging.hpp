@@ -47,8 +47,6 @@
 
 #endif
 
-#define CURRENT_FUNCTION_SIGNATURE(x) (typeid(x).name())
-
 namespace VvvfSimulator::Logging
 {
 	template <typename Callable, typename = std::enable_if_t<std::is_invocable_v<Callable>>>
