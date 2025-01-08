@@ -25,15 +25,21 @@
 #include <type_traits>
 #include <typeinfo>
 
+// If compiling on GCC or Clang:
 #if __has_include(<cxxabi.h>)
 #include <cxxabi.h>
 #endif // __has_include(<cxxabi.h>)
 
+// If compiling on MSVC:
 #if __has_include(<dbghelp.h>)
 #include <cstring>
 #include <dbghelp.h>
 #pragma comment(lib, "dbghelp.lib")
 #endif // __has_include(<dbghelp.h>)
+
+#if __has_included(<errhandlingapi.h>)
+#include <errhandlingapi.h>
+#endif // __has_included(<errhandlingapi.h>)
 
 #if __has_include(<windows.h>)
 #include <windows.h>
@@ -49,9 +55,9 @@ namespace VvvfSimulator::Logging
 		std::array<char, 256> demangledName_arr;
 		const auto mangledName = typeid(callable).name();
 		int result = UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
-		if (result != 0 && result < demangledName_arr.size())
+		if (result != 0)
 			return std::string(demangledName_arr);
-		else return result;
+		else return GetLastError();
 		#elif __has_include(<cxxabi.h>)
 		// Code for the libstdc++ ABI
 		int status;
