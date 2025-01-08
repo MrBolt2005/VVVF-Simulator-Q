@@ -62,7 +62,7 @@ namespace VvvfSimulator::Logging
 		#elif __has_include(<cxxabi.h>)
 		// Code for the libstdc++ ABI
 		int status;
-		auto demangledName_c_str = abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, status);
+		auto demangledName_c_str = abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, &status);
 		if (status == 0)
 		{
 			std::string demangledName(demangledName_c_str);
@@ -75,10 +75,11 @@ namespace VvvfSimulator::Logging
 		{
 			std::free(demangledName_c_str);
 			//demangledName_c_str = nullptr;
-			return status;
+			return std::unexpected(status);
 		}
 		#else
 		// This should not happen(!)
 		return typeid(callable).name();
+        #endif
 	}
 }
