@@ -58,7 +58,7 @@ namespace VvvfSimulator::Logging
 		int result = UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
 		if (result != 0)
 			return std::string(demangledName_arr);
-		else return GetLastError();
+		else return std::unexpected(GetLastError());
 		#elif __has_include(<cxxabi.h>)
 		// Code for the libstdc++ ABI
 		int status;
