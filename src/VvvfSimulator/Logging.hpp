@@ -26,32 +26,36 @@
 #include <type_traits>
 #include <typeinfo>
 
-// If compiling on GCC or Clang:
-#if __has_include(<cxxabi.h>)
-#include <cxxabi.h>
-#endif // __has_include(<cxxabi.h>)
-
 // If compiling on MSVC:
-#if __has_include(<dbghelp.h>)
+#if defined(_MSC_VER)
+
+#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __FUNCSIG__
+
 #include <cstring>
+
 #include <dbghelp.h>
 #pragma comment(lib, "dbghelp.lib")
-#endif // __has_include(<dbghelp.h>)
-
-#if __has_included(<errhandlingapi.h>)
 #include <errhandlingapi.h>
-#endif // __has_include(<errhandlingapi.h>)
-
-#if __has_include(<windows.h>)
 #include <windows.h>
-#endif // __has_include(<windows.h>)
+
+// If compiling on GCC or Clang:
+#elif __has_include(<cxxabi.h>) // defined(__GNUC__) || defined(__clang__)
+
+#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __PRETTY_FUNCTION__
+
+#include <cxxabi.h>
+
+#endif
+
+#define CURRENT_FUNCTION_SIGNATURE(x) (typeid(x).name())
 
 namespace VvvfSimulator::Logging
 {
 	template <typename Callable, typename = std::enable_if_t<std::is_invocable_v<Callable>>>
 	std::expected<std::string, int> getDemangledCallableSignature(Callable callable)
 	{
-		#if __has_include(<windows.h>) && __has_include(<dbghelp.h>)
+		#if defined(_MSC_VER)
+
 		// Code for the MSVC ABI
 		std::array<char, 256> demangledName_arr;
 		const auto mangledName = typeid(callable).name();
@@ -59,7 +63,9 @@ namespace VvvfSimulator::Logging
 		if (result != 0)
 			return std::string(demangledName_arr);
 		else return std::unexpected(GetLastError());
+
 		#elif __has_include(<cxxabi.h>)
+		
 		// Code for the libstdc++ ABI
 		int status;
 		const auto demangledName_c_str = abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, &status);
@@ -77,6 +83,7 @@ namespace VvvfSimulator::Logging
 			//demangledName_c_str = nullptr;
 			return std::unexpected(status);
 		}
+
 		#else
 		// This should not happen(!)
 		return typeid(callable).name();
