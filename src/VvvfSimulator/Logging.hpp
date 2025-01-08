@@ -39,7 +39,7 @@
 
 #if __has_included(<errhandlingapi.h>)
 #include <errhandlingapi.h>
-#endif // __has_included(<errhandlingapi.h>)
+#endif // __has_include(<errhandlingapi.h>)
 
 #if __has_include(<windows.h>)
 #include <windows.h>
