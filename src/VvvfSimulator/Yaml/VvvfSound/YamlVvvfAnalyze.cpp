@@ -18,6 +18,7 @@
 // Version 1.9.1.1
 
 // Internal Includes
+#include "../../Logging.hpp"
 #include "YamlVvvfAnalyze.hpp"
 // Standard Library Includes
 #include <fstream>
@@ -37,7 +38,7 @@ namespace NAMESPACE_YAMLVVVFSOUND
 			*this = result.value();
 		else
 		{
-			qCritical("%s: %s\n", typeid(YamlVvvfSoundData::YamlVvvfSoundData(RflCppFormats, std::filesystem::path)).name(), result.error().value());
+			qCritical("%s: %s\n", DEMANGLED_CURRENT_FUNCTION_SIGNATURE, result.error().value());
 			QMessageBox::critical(nullptr, QObject::tr(Error), result.error().value());
 		}
 	}
