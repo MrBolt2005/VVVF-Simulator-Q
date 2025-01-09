@@ -22,7 +22,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1 </param>
 			/// <returns> One cycle of UVW </returns>
-			QVector<WaveValues_UVW> getUVWCycle(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, unsigned division, bool precise)
+			QVector<WaveValues_UVW> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise)
 			{
 				PwmCalculateValues preCalculate = YamlVvvfWave::calculateYaml(control, sound);
 				double _F = control.sinAngleFreq;
@@ -54,7 +54,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1</param>
 			/// <returns> WaveForm of UVW in 1 sec.</returns>
-			QVector<WaveValues> getUVWSec(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, unsigned division, bool precise)
+			QVector<WaveValues> getUVWSec(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise)
 			{
 				PwmCalculateValues preCalculate = YamlVvvfWave::calculateYaml(control, sound);
 				double _F = control.sinAngleFreq;
@@ -76,9 +76,9 @@ namespace VvvfSimulator::Generation
 				return getUVW(control, sound, initialPhase, count, count);
 			}
 
-			QVector<WaveValues> getUVW(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count)
+			QVector<WaveValues> getUVW(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count)
 			{
-				PwmCalculateValues calculated_Values = YamlVvvfWave::CalculateYaml(control, sound);
+				PwmCalculateValues calculated_Values = YamlVvvfWave::calculateYaml(control, sound);
 				QVector<WaveValues> PWM_Array(count + 1);
 				for (qsizetype i = 0; i < PWM_Array.size(); i++)
 				{
@@ -156,7 +156,7 @@ namespace VvvfSimulator::Generation
 		/// <param name="Delta"></param>
 		/// <param name="N"></param>
 		/// <returns></returns>
-		QVector<double> getFourierCoefficients(VvvfValues& control, YamlVvvfSoundData& sound, qsizetype delta, qsizetype N)
+		QVector<double> getFourierCoefficients(VvvfValues control, const YamlVvvfSoundData& sound, qsizetype delta, qsizetype N)
 		{
 			control.allowRandomFreqMove = false;
 			auto PWM_Array = WaveForm::getUVWCycle(control, sound, InternalMath::M_PI_6, delta, false);
@@ -180,12 +180,12 @@ namespace VvvfSimulator::Generation
 		/// <param name="Sound"></param>
 		/// <param name="Control"></param>
 		/// <returns></returns>
-		double getVoltageRate(VvvfValues& control, YamlVvvfSoundData& sound, bool precise, bool fixSign = true)
+		double getVoltageRate(const VvvfValues& control, const YamlVvvfSoundData& sound, bool precise, bool fixSign = true)
 		{
 			auto PWM_Array = WaveForm::getUVWCycle(control, sound, InternalMath::M_PI_6, 120000, precise);
 			return getVoltageRate(PWM_Array, fixSign);
 		}
-		double getVoltageRate(ref QVector<WaveValues> UVW, bool fixSign = true)
+		double getVoltageRate(const QVector<WaveValues>& UVW, bool fixSign = true)
 		{
 			double result = getFourierFast(UVW, 1) / VoltageConvertFactor;
 			if (fixSign) result = std::fabs(result);

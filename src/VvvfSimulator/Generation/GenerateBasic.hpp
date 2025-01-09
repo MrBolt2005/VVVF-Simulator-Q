@@ -22,7 +22,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1 </param>
 			/// <returns> One cycle of UVW </returns>
-			QVector<WaveValues> getUVWCycle(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
+			QVector<WaveValues_UVW> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
 			
 			/// <summary>
 			/// Calculates WaveForm of UVW in 1 sec.
@@ -33,9 +33,9 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1</param>
 			/// <returns> WaveForm of UVW in 1 sec.</returns>
-			QVector<WaveValues> getUVWSec(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
+			QVector<WaveValues> getUVWSec(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
 
-			QVector<WaveValues> getUVW(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count);
+			QVector<WaveValues> getUVW(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count);
 		}
 		
 		namespace Fourier
@@ -55,7 +55,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Delta"></param>
 			/// <param name="N"></param>
 			/// <returns></returns>
-			QVector<double> getFourierCoefficients(VvvfValues& control, YamlVvvfSoundData& sound, qsizetype delta, qsizetype N);
+			QVector<double> getFourierCoefficients(VvvfValues control, const YamlVvvfSoundData& sound, qsizetype delta, qsizetype N);
 
 			std::string getDesmosFourierCoefficientsArray(const QVector<double>& coefficients);
 
@@ -65,8 +65,8 @@ namespace VvvfSimulator::Generation
 			/// <param name="Sound"></param>
 			/// <param name="Control"></param>
 			/// <returns></returns>
-			double getVoltageRate(VvvfValues& control, YamlVvvfSoundData& sound, bool precise, bool fixSign = true);
-			double getVoltageRate(ref QVector<WaveValues> UVW, bool fixSign = true);
+			double getVoltageRate(const VvvfValues& control, const YamlVvvfSoundData& sound, bool precise, bool fixSign = true);
+			double getVoltageRate(const QVector<WaveValues>& UVW, bool fixSign = true);
 		}
 	}
 }
