@@ -175,21 +175,21 @@ namespace VvvfSimulator::Generation
 		}
 
 		/// <summary>
-			/// Do clone about control!
-			/// </summary>
-			/// <param name="Sound"></param>
-			/// <param name="Control"></param>
-			/// <returns></returns>
-			double getVoltageRate(VvvfValues& control, YamlVvvfSoundData& sound, bool precise, bool fixSign = true)
-			{
-				auto PWM_Array = WaveForm::getUVWCycle(control, sound, InternalMath::M_PI_6, 120000, precise);
-				return getVoltageRate(PWM_Array, fixSign);
-			}
-			double getVoltageRate(ref QVector<WaveValues> UVW, bool fixSign = true)
-			{
-				double result = getFourierFast(UVW, 1) / VoltageConvertFactor;
-				if (fixSign) result = std::fabs(result);
-				return result;
-			}
+		/// Do clone about control!
+		/// </summary>
+		/// <param name="Sound"></param>
+		/// <param name="Control"></param>
+		/// <returns></returns>
+		double getVoltageRate(VvvfValues& control, YamlVvvfSoundData& sound, bool precise, bool fixSign = true)
+		{
+			auto PWM_Array = WaveForm::getUVWCycle(control, sound, InternalMath::M_PI_6, 120000, precise);
+			return getVoltageRate(PWM_Array, fixSign);
+		}
+		double getVoltageRate(ref QVector<WaveValues> UVW, bool fixSign = true)
+		{
+			double result = getFourierFast(UVW, 1) / VoltageConvertFactor;
+			if (fixSign) result = std::fabs(result);
+			return result;
+		}
 	}
 }
