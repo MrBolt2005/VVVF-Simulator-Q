@@ -55,7 +55,7 @@ namespace NAMESPACE_VVVF::Struct
 		bool   masconOff         = false;
 
 		bool allowSineTimeChange =  true;
-		bool allowRandomFreqMode =  true;
+		bool allowRandomFreqMove =  true;
 
 		void resetControlValues();
 

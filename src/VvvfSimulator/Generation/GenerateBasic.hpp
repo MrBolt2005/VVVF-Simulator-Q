@@ -22,7 +22,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1 </param>
 			/// <returns> One cycle of UVW </returns>
-			QVector<WaveValues> getUVWCycle(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, int division, bool precise);
+			QVector<WaveValues> getUVWCycle(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
 			
 			/// <summary>
 			/// Calculates WaveForm of UVW in 1 sec.
@@ -33,19 +33,19 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1</param>
 			/// <returns> WaveForm of UVW in 1 sec.</returns>
-			QVector<WaveValues> getUVWSec(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, int division, bool precise);
+			QVector<WaveValues> getUVWSec(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
 
-			QVector<WaveValues> getUVW(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, int count);
+			QVector<WaveValues> getUVW(VvvfValues& control, YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count);
 		}
 		
 		namespace Fourier
 		{
 			constexpr double VoltageConvertFactor = 1.102657791;
-			double getFourier(const QVector<WaveValues>& UVW, int N);
+			double getFourier(const QVector<WaveValues>& UVW, qsizetype N);
 			
-			double getFourierFast(const QVector<WaveValues>& UVW, int N);
+			double getFourierFast(const QVector<WaveValues>& UVW, qsizetype N);
 			
-			QVector<double> getFourierCoefficients(const QVector<WaveValues>& UVW, int N);
+			QVector<double> getFourierCoefficients(const QVector<WaveValues>& UVW, qsizetype N);
 			
 			/// <summary>
 			/// Gets Fourier series coefficients
@@ -55,7 +55,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Delta"></param>
 			/// <param name="N"></param>
 			/// <returns></returns>
-			QVector<double> getFourierCoefficients(VvvfValues& control, YamlVvvfSoundData& sound, int delta, int N);
+			QVector<double> getFourierCoefficients(VvvfValues& control, YamlVvvfSoundData& sound, qsizetype delta, qsizetype N);
 
 			std::string getDesmosFourierCoefficientsArray(const QVector<double>& coefficients);
 
