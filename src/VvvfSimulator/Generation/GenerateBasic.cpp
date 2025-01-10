@@ -27,7 +27,6 @@ namespace VvvfSimulator::Generation
 				PwmCalculateValues preCalculate = YamlVvvfWave::calculateYaml(control, sound);
 				double _F = control.sinAngleFreq;
 				if (_F < preCalculate.minimumFrequency && control.controlFrequency > 0) _F = preCalculate.minimumFrequency;
-				double _K = (_F > 0.01 && _F < 1) ? 1 / _F : 1;
 
 				if (precise)
 				{
@@ -42,7 +41,7 @@ namespace VvvfSimulator::Generation
 				control.sinTime = 0;
 				control.sawTime = 0;
 				
-				return getUVW(control, sound, initialPhase, invDeltaT, count);
+				return getUVW(control, sound, initialPhase, static_cast<double>(invDeltaT), count);
 			}
 
 			/// <summary>
@@ -59,7 +58,6 @@ namespace VvvfSimulator::Generation
 				PwmCalculateValues preCalculate = YamlVvvfWave::calculateYaml(control, sound);
 				double _F = control.sinAngleFreq;
 				if (_F < preCalculate.minimumFrequency && control.controlFrequency > 0) _F = preCalculate.minimumFrequency;
-				double _K = (_F > 0.01 && _F < 1) ? 1 / _F : 1;
 
 				if (precise)
 				{
@@ -73,10 +71,10 @@ namespace VvvfSimulator::Generation
 				control.sinTime = 0;
 				control.sawTime = 0;
 				
-				return getUVW(control, sound, initialPhase, count, count);
+				return getUVW(control, sound, initialPhase, static_cast<double>(count), count);
 			}
 
-			QVector<WaveValues> getUVW(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, qsizetype count)
+			QVector<WaveValues> getUVW(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, double invDeltaT, int64_t count)
 			{
 				PwmCalculateValues calculated_Values = YamlVvvfWave::calculateYaml(control, sound);
 				QVector<WaveValues> PWM_Array(count + 1);
