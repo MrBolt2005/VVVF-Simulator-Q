@@ -84,27 +84,27 @@ namespace NAMESPACE_VVVF::InternalMath
 		{
 			double X{}, Y{};
 			Point2d(double x = 0.0, double y = 0.0) : X(x), Y(y) {}
-			inline bool isZero() const
+			inline bool isZero() const noexcept
 			{
 				return std::fabs(X) == 0 && std::fabs(Y) == 0;
 			}
-			inline static Point2d operator +(const Point2d& a, const Point2d& b)
+			constexpr static Point2d operator +(const Point2d& a, const Point2d& b) noexcept
 			{
 				return Point2d(a.X + b.X, a.Y + b.Y);
 			}
-			inline static Point2d operator -(const Point2d& a, const Point2d& b)
+			constexpr static Point2d operator -(const Point2d& a, const Point2d& b) noexcept
 			{
 				return Point2d(a.X - b.X, a.Y - b.Y);
 			}
-			inline static Point2d operator *(const Point2d& a, const Point2d& b)
+			constexpr static Point2d operator *(const Point2d& a, const Point2d& b) noexcept
 			{
 				return Point2d(a.X * b.X, a.Y * b.Y);
 			}
-			inline static Point2d operator /(const Point2d& a, const Point2d& b)
+			constexpr static Point2d operator /(const Point2d& a, const Point2d& b)
 			{
 				return Point2d(a.X / b.X, a.Y / b.Y);
 			}
-			inline static Point2d max(const Point2d& a, const Point2d& b)
+			constexpr static Point2d max(const Point2d& a, const Point2d& b)
 			{
 				return Point2d(std::max(a.X, b.X), std::max(a.Y, b.Y));
 			}
