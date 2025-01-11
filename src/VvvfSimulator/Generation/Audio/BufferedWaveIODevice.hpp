@@ -12,8 +12,7 @@ namespace VvvfSimulator { namespace Generation { namespace Audio {
 	public:
 		bool clearDataAfterRead = true;
 		
-		BufferedWaveIODevice(QObject *parent = nullptr, qint64 maxSize = 80000, bool __clearDataAfterRead = true)
-			: QIODevice(parent), m_maxSize(maxSize) {}
+		BufferedWaveIODevice(QObject *parent = nullptr, qint64 maxSize = 80000, bool __clearDataAfterRead = true);
 
 		void addSample(const QByteArray& sample);
 		bool open(OpenMode mode) override;

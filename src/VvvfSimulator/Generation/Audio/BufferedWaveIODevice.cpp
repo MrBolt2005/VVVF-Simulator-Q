@@ -4,7 +4,7 @@
 // Package Includes
 #include <QDebug>
 
-VvvfSimulator::Generation::Audio::BufferedWaveIODeviceBufferedWaveIODevice(QObject *parent = nullptr, qint64 maxSize = 80000, bool __clearDataAfterRead = true) :
+VvvfSimulator::Generation::Audio::BufferedWaveIODevice::BufferedWaveIODevice(QObject *parent = nullptr, qint64 maxSize = 80000, bool __clearDataAfterRead = true) :
   QIODevice(parent), m_maxSize(maxSize) {}
 
 void VvvfSimulator::Generation::Audio::BufferedWaveIODevice::addSample(const QByteArray &sample)
