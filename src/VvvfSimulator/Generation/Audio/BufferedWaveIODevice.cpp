@@ -41,8 +41,9 @@ qint64 VvvfSimulator::Generation::Audio::BufferedWaveIODevice::readData(char *da
 
 qint64 VvvfSimulator::Generation::Audio::BufferedWaveIODevice::writeData(const char *data, qint64 len)
 {
-	qWarning("%s: %s\n", __PRETTY_FUNCTION__, qUtf8Printable(QObject::tr("A função writeData não pode ser usada nesta classe."))); // Log de aviso
-	Q_UNUSED(data);
+//  qWarning() << QByteArray(__PRETTY_FUNCTION__) + ':' << QObject::tr("A função writeData não pode ser usada nesta classe."); // Log de aviso
+    qWarning("%s: %s\n", __PRETTY_FUNCTION__, qUtf8Printable(QObject::tr("A função writeData não pode ser usada nesta classe.")));
+    Q_UNUSED(data);
 	Q_UNUSED(len);
 	return -1;
 }
