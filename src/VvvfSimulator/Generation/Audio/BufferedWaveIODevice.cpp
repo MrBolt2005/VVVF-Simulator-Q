@@ -16,8 +16,9 @@ void VvvfSimulator::Generation::Audio::BufferedWaveIODevice::addSample(const QBy
 
 bool VvvfSimulator::Generation::Audio::BufferedWaveIODevice::open(OpenMode mode)
 {
-  m_pos = 0;
-  return QIODevice::open(mode);
+  bool ret = QIODevice::open(mode);
+  if (ret) m_pos = 0;
+  return ret;
 }
 
 qint64 VvvfSimulator::Generation::Audio::BufferedWaveIODevice::readData(char *data, qint64 maxlen)
