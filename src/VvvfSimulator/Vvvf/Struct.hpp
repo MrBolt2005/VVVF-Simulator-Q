@@ -37,11 +37,21 @@ namespace NAMESPACE_VVVF::Struct
 	struct WaveValues
 	{
 		int_fast8_t U, V, W;
+
+		          WaveValues() = default;
+		constexpr WaveValues(int_fast8_t u, int_fast8_t v, int_fast8_t w) :
+			U(u), V(v), W(w)
+		{}
 	};
 
 	struct CarrierFreq
 	{
 		double baseFrequency, range, interval;
+
+		          CarrierFreq() = default;
+		constexpr CarrierFreq(double bF, double r, double i) :
+			baseFrequency(bF), range(r), interval(i)
+		{}
 	};
 
 	struct VvvfValues
