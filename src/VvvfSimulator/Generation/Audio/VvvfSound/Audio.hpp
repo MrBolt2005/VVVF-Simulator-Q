@@ -4,7 +4,6 @@
 #include <YamlVvvfAnalyze.hpp>
 // STL Includes
 #include <functional>
-#include <memory>
 #include <vector>
 // Package Includes
 #include <QAudioFormat>
@@ -14,6 +13,7 @@
 #include <QDir>
 #include <QFile>
 #include <QObject>
+#include <QScopedPointer>
 
 namespace VvvfSimulator::Generation::Audio::VvvfSound
 {
@@ -22,12 +22,13 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound
 		Q_OBJECT
 		using VvvfSimulator::Generation::Audio::BufferedWaveIODevice;
 
-		std::unique_ptr<BufferedWaveIODevice> m_Buffer;
-		std::unique_ptr<QAudioSink> m_audioSink;
+		QScopedPointer<BufferedWaveIODevice> m_Buffer;
+		QScopedPointer<QAudioSink> m_audioSink;
 		QFile m_file;
 
 	public:
 		BufferedWaveFileWriter(const QDir& path, int samplingFrequency = 80000, QObject *parent = nullptr);
+		BufferedWaveFileWriter(const QDir& path, const QAudioFormat& audioFormat, QObject *parent = nullptr);
 		~BufferedWaveFileWriter() override;
 		void addSample(const QByteArray& sample);
 	//	void start();
