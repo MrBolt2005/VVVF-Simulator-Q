@@ -1,6 +1,16 @@
 {
   "files.associations": {
     "map": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "qbytearray": "cpp",
+    "qdatetime": "cpp",
+    "qdir": "cpp",
+    "qobject": "cpp",
+    "qbuffer": "cpp",
+    "stdexcept": "cpp",
+    "qexception": "cpp",
+    "exception": "cpp",
+    "optional": "cpp",
+    "variant": "cpp"
   }
 }
