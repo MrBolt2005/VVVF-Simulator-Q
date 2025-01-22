@@ -2,7 +2,11 @@
 #include <QRunnable>
 #include <QScopedPointer>
 #include <QString>
+#ifdef __ANDROID__ || __VVVF_IOS__
+#include <QPushNotification>
+#else
 #include <QSystemTrayIcon>
+#endif // __ANDROID__ || __VVVF_IOS__
 #include <QObject>
 
 namespace VvvfSimulator
@@ -13,14 +17,17 @@ namespace VvvfSimulator
 	{
 		Q_OBJECT
 
-		QScopedPointer<QRunnable> onOpenCallback;
+		QMutex m_lock;
+		QScopedPointer<QRunnable> m_onOpenCallback;
+		QString m_msg;
 
-	public:		
-		QString msg;
+	public:
 
 		//virtual NotificationInterface(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr) = 0;
 		constexpr ~NotificationInterface() override = default;
 		virtual void send() = 0;
+		virtual QString msg() const;
+		virtual bool setMsg(const QString& message);
 	};
 	#ifdef __ANDROID__ || __VVVF_IOS__
 	
@@ -32,7 +39,7 @@ namespace VvvfSimulator
 		void send() override;
 	};
 
-	#define VVVF_NOTIFICATION PushNotification;
+	using Notification = PushNotification;
 
 	#else
 
@@ -46,7 +53,7 @@ namespace VvvfSimulator
 		void send() override;
 	};
 
-	#define VVVF_NOTIFICATION TrayIconNotification;
+	using Notification = TrayIconNotification;
 
 	#endif
 }
