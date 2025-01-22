@@ -11,6 +11,8 @@
     "qexception": "cpp",
     "exception": "cpp",
     "optional": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "qmutexlocker": "cpp",
+    "qscopedpointer": "cpp"
   }
 }

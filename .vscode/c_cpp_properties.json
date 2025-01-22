@@ -10,7 +10,7 @@
             "defines": [],
             "cStandard": "c17",
             "cppStandard": "c++23",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "${default}"
         }
     ],
     "version": 4
