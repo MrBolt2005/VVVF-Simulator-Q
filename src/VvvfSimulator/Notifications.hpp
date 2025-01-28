@@ -33,8 +33,8 @@ namespace VvvfSimulator
 		virtual void setTitle(const QString& title);
 		virtual QString msg() const;
 		virtual void setMsg(const QString& message);
-        virtual int time() const;
-        virtual void setTime(int time);
+		virtual int time() const;
+		virtual void setTime(int time);
 
 	signals:
 		void notificationOpened();
