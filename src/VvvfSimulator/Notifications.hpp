@@ -1,4 +1,4 @@
-#include <QMutex>
+#include <QReadWriteLock>
 #include <QRunnable>
 #include <QScopedPointer>
 #include <QString>
@@ -17,24 +17,37 @@ namespace VvvfSimulator
 	{
 		Q_OBJECT
 
-		QMutex m_lock;
-		QScopedPointer<QRunnable> m_onOpenCallback;
-		QString m_msg;
+        NotificationInterface();
+
+	protected:
+		mutable QReadWriteLock m_lock;
+		QString m_title, m_msg;
+		QAtomicInt m_time;
 
 	public:
-
 		//virtual NotificationInterface(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr) = 0;
-		constexpr ~NotificationInterface() override = default;
+		~NotificationInterface() override = default;
 		virtual void send() = 0;
+		virtual QString title() const;
+		virtual void setTitle(const QString& title);
 		virtual QString msg() const;
-		virtual bool setMsg(const QString& message);
+		virtual void setMsg(const QString& message);
+        virtual int time() const;
+        virtual void setTime(int time);
+
+	signals:
+		void notificationOpened();
 	};
 	#ifdef __ANDROID__ || __VVVF_IOS__
 	
 	class PushNotification : public NotificationInterface
 	{
+		Q_OBJECT
+	protected:
+		int m_time;
+	
 	public:
-		PushNotification(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr);
+		PushNotification(const QString& title, const QString& message, bool sendOnCreation = true, QObject *parent = nullptr);
 		constexpr ~PushNotification() override = default;
 		void send() override;
 	};
@@ -45,10 +58,15 @@ namespace VvvfSimulator
 
 	class TrayIconNotification : public NotificationInterface
 	{
+		Q_OBJECT
+	protected:
+		int m_time;
+
+	private:
 		QScopedPointer<QSystemTrayIcon> m_trayIcon;
 
 	public:
-		TrayIconNotification(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr);
+		TrayIconNotification(const QString& title, const QString& message, bool sendOnCreation = true, QObject *parent = nullptr);
 		constexpr ~TrayIconNotification() override = default;
 		void send() override;
 	};
