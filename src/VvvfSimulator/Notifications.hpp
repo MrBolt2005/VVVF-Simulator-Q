@@ -18,12 +18,11 @@ namespace VvvfSimulator
 	{
 		Q_OBJECT
 
-        NotificationInterface();
+		NotificationInterface();
 
 	protected:
 		mutable QReadWriteLock m_lock;
 		QString m_title, m_msg;
-		QAtomicInt m_time;
 
 	public:
 		//virtual NotificationInterface(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr) = 0;
@@ -33,8 +32,8 @@ namespace VvvfSimulator
 		virtual void setTitle(const QString& title);
 		virtual QString msg() const;
 		virtual void setMsg(const QString& message);
-		virtual int time() const;
-		virtual void setTime(int time);
+		virtual int time() const = 0;
+		virtual void setTime(int time) = 0;
 
 	signals:
 		void notificationOpened();
@@ -70,6 +69,8 @@ namespace VvvfSimulator
 		TrayIconNotification(const QString& title, const QString& message, bool sendOnCreation = true, QObject *parent = nullptr);
 		constexpr ~TrayIconNotification() override = default;
 		void send() override;
+		int time() const override;
+		void setTime(int time) override;
 	};
 
 	using Notification = TrayIconNotification;
