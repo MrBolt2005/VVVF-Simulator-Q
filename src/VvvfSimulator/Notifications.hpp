@@ -1,13 +1,14 @@
+#include <QAtomicInt>
 #include <QReadWriteLock>
-#include <QRunnable>
 #include <QScopedPointer>
 #include <QString>
+#include <QObject>
+
 #ifdef __ANDROID__ || __VVVF_IOS__
 #include <QPushNotification>
 #else
 #include <QSystemTrayIcon>
 #endif // __ANDROID__ || __VVVF_IOS__
-#include <QObject>
 
 namespace VvvfSimulator
 {
