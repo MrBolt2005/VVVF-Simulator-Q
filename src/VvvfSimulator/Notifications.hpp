@@ -32,8 +32,8 @@ namespace VvvfSimulator
 		virtual void setTitle(const QString& title);
 		virtual QString msg() const;
 		virtual void setMsg(const QString& message);
-		virtual int time() const = 0;
-		virtual void setTime(int time) = 0;
+		virtual int time() const;
+		virtual void setTime(int time);
 
 	signals:
 		void notificationOpened();
@@ -47,9 +47,11 @@ namespace VvvfSimulator
 		int m_time;
 	
 	public:
-		PushNotification(const QString& title, const QString& message, bool sendOnCreation = true, QObject *parent = nullptr);
+		PushNotification(const QString& title, const QString& message, int time = 5000, bool sendOnCreation = true, QObject *parent = nullptr);
 		constexpr ~PushNotification() override = default;
 		void send() override;
+		int time() const override;
+		void setTime(int time) override;
 	};
 
 	using Notification = PushNotification;
