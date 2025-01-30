@@ -1,81 +1,42 @@
-#include <QAtomicInt>
 #include <QReadWriteLock>
-#include <QScopedPointer>
-#include <QString>
 #include <QObject>
+#include <QString>
 
-#ifdef __ANDROID__ || __VVVF_IOS__
+#if defined(__ANDROID__) || defined(__VVVF_IOS__)
+#define VVVF_PUSH_NOTIFICATION
 #include <QPushNotification>
 #else
-#include <QSystemTrayIcon>
+#include <QAtomicInt>
+#include <memory>
+//#include <QSystemTrayIcon>
 #endif // __ANDROID__ || __VVVF_IOS__
 
 namespace VvvfSimulator
 {
-	// Cross-platform push notifications
-	// Base interface
-	class NotificationInterface : public QObject
+	class Notification : public QObject
 	{
 		Q_OBJECT
 
-		NotificationInterface();
-
-	protected:
 		mutable QReadWriteLock m_lock;
 		QString m_title, m_msg;
-
+	
+	#ifndef VVVF_PUSH_NOTIFICATION
+		QAtomicInt m_time;
+		std::unique_ptr<QSystemTrayIcon> m_trayIcon;
+	#endif//VVVF_PUSH_NOTIFICATION
+		
 	public:
-		//virtual NotificationInterface(const QString *message = nullptr, bool sendOnCreation = true, QObject *parent = nullptr) = 0;
-		~NotificationInterface() override = default;
-		virtual void send() = 0;
-		virtual QString title() const;
-		virtual void setTitle(const QString& title);
-		virtual QString msg() const;
-		virtual void setMsg(const QString& message);
-		virtual int time() const;
-		virtual void setTime(int time);
+		Notification(const QString& title, const QString& message, bool sendOnCreation = true, int time = 10000, QObject *parent = nullptr);
+		~Notification() override;
+		void send();
+		QString title() const;
+		void setTitle(const QString& title);
+		QString msg() const;
+		void setMsg(const QString& message);
+		int time() const;
+		void setTime(int time);
 
 	signals:
 		void notificationOpened();
 	};
-	#ifdef __ANDROID__ || __VVVF_IOS__
-	
-	class PushNotification : public NotificationInterface
-	{
-		Q_OBJECT
-	protected:
-		int m_time;
-	
-	public:
-		PushNotification(const QString& title, const QString& message, int time = 5000, bool sendOnCreation = true, QObject *parent = nullptr);
-		constexpr ~PushNotification() override = default;
-		void send() override;
-		int time() const override;
-		void setTime(int time) override;
-	};
-
-	using Notification = PushNotification;
-
-	#else
-
-	class TrayIconNotification : public NotificationInterface
-	{
-		Q_OBJECT
-	protected:
-		int m_time;
-
-	private:
-		QScopedPointer<QSystemTrayIcon> m_trayIcon;
-
-	public:
-		TrayIconNotification(const QString& title, const QString& message, bool sendOnCreation = true, QObject *parent = nullptr);
-		constexpr ~TrayIconNotification() override = default;
-		void send() override;
-		int time() const override;
-		void setTime(int time) override;
-	};
-
-	using Notification = TrayIconNotification;
-
-	#endif
 }
