@@ -36,4 +36,35 @@ namespace VvvfSimulator::Yaml
 		XML = 'X',
 		YAML = 'Y'
 	};
+
+	constexpr const char* toString(RflCppFormats format)
+	{
+		switch (format)
+		{
+		case RflCppFormats::Avro:
+			return "Avro";
+		case RflCppFormats::BSON:
+			return "BSON";
+		case RflCppFormats::CBOR:
+			return "CBOR";
+		case RflCppFormats::FlexBuffers:
+			return "FlexBuffers";
+		case RflCppFormats::JSON:
+			return "JSON";
+		case RflCppFormats::JSON_Schema:
+			return "JSON Schema";
+		case RflCppFormats::MessagePack:
+			return "MessagePack";
+		case RflCppFormats::TOML:
+			return "TOML";
+		case RflCppFormats::UBJSON:
+			return "UBJSON";
+		case RflCppFormats::XML:
+			return "XML";
+		case RflCppFormats::YAML:
+			return "YAML";
+		default:
+			return "Unknown";
+		}
+	}
 }

@@ -12,6 +12,8 @@ namespace VvvfSimulator::Generation
 		using NAMESPACE_VVVF::Struct::WaveValues;
 		using NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData;
 
+		using NAMESPACE_VVVF::Struct::PwmCalculateValues;
+
 		namespace WaveForm
 		{
 			/// <summary>
@@ -22,7 +24,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1 </param>
 			/// <returns> One cycle of UVW </returns>
-			QVector<WaveValues_UVW> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise)
+			QVector<WaveValues> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise)
 			{
 				PwmCalculateValues preCalculate = YamlVvvfWave::calculateYaml(control, sound);
 				double _F = control.sinAngleFreq;

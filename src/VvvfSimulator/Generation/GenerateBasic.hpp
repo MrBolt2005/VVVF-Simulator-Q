@@ -22,7 +22,7 @@ namespace VvvfSimulator::Generation
 			/// <param name="Division"> Recommend : 120000 , Brief : 2000 </param>
 			/// <param name="Precise"> True for more precise calculation when Freq < 1 </param>
 			/// <returns> One cycle of UVW </returns>
-			QVector<WaveValues_UVW> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
+			QVector<WaveValues> getUVWCycle(VvvfValues control, const YamlVvvfSoundData& sound, double initialPhase, qsizetype division, bool precise);
 			
 			/// <summary>
 			/// Calculates WaveForm of UVW in 1 sec.

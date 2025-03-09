@@ -33,6 +33,7 @@
 #include <vector>
 // Package Includes
 #include <rfl/Result.hpp>
+//struct Nothing;
 
 namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 {
@@ -152,14 +153,14 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			//
 			// Fundamental Configuration
 			//
-				enum class PulseTypeName::uint_fast8_t
+				enum class PulseTypeName:uint_fast8_t
 				{
 					ASYNC, SYNC, CHM, SHE, HO,
 				};
 
 				enum class BaseWaveType:uint_fast8_t
 				{
-					Sine, Saw, ModifiedSineA, ModifiedSineB, ModifiedSaw1
+					Sine, Saw, Square, ModifiedSineA, ModifiedSineB, ModifiedSawA
 				};
 
 				struct PulseHarmonic
@@ -170,7 +171,7 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					};
 
 					double Harmonic = 3.0, Amplitude = 0.2, InitialPhase = 0;
-					bool IsHarmonic Proportional = true, IsAmplitudeProportional = true;
+					bool IsHarmonicProportional = true, IsAmplitudeProportional = true;
 					PulseHarmonicType Type = PulseHarmonicType::Sine;
 				};
 
@@ -185,10 +186,39 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 
 					DiscreteTimeMode Mode = DiscreteTimeMode::Middle;
 
-					bool getEnabled();
-					bool setEnabled(bool enable);
-					int  getSteps();
-					bool setSteps(int steps);
+					constexpr bool getEnabled() const noexcept { return Steps > 0; }
+					constexpr bool setEnabled(bool enable) noexcept
+					{
+						if (enable)
+							if (Steps < 0)
+							{
+								Steps *= -1;
+								return true;
+							}
+							else return false;
+						else
+							if (Steps > 0)
+							{
+								Steps *= -1;
+								return true;
+							}
+							else return false;
+					}
+					constexpr int  getSteps() const noexcept { return std::abs(Steps); }
+					constexpr bool setSteps(int steps) noexcept
+					{
+						const int stepsAbs = std::abs(steps);
+						if (getEnabled())
+						{
+							Steps = stepsAbs;
+							return true;
+						}
+						else
+						{
+							Steps = -stepsAbs;
+							return false;
+						}
+					}
 				//	bool setStepsAndEnable(int steps);
 				};
 
@@ -240,7 +270,7 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					Alt28   =  28,
 					Alt29   =  29,
 					Alt30   =  30,
-				}
+				};
 				PulseAlternative Alternative = PulseAlternative::Default;
 
 			//
@@ -268,7 +298,19 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			//
 				std::map<PulseDataKey, PulseDataValue> PulseData;
 
-				YamlPulseMode(const YamlPulseMode& YPM);
+				constexpr YamlPulseMode(const YamlPulseMode& YPM)
+				{
+					PulseType = YPM.PulseType;
+					PulseCount = YPM.PulseCount;
+					//PulseAlternative = YPM.PulseAlternative;
+					Alternative = YPM.Alternative;
+					Shift = YPM.Shift;
+					Square = YPM.Square;
+					BaseWave = YPM.BaseWave;
+					DiscreteTime = YPM.DiscreteTime;
+					PulseHarmonics = YPM.PulseHarmonics;
+					PulseData = YPM.PulseData;
+				}
 			};
 
 			struct YamlAmplitude
@@ -321,8 +363,10 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 
 		YamlVvvfSoundData(RflCppFormats format, std::filesystem::path Path);
 		
-		rfl::Result<Nothing>           save(RflCppFormats format, std::filesystem::path Path) const;
+		rfl::Result<rfl::Nothing>      save(RflCppFormats format, std::filesystem::path Path) const;
 
 		rfl::Result<YamlVvvfSoundData> load(RflCppFormats format, std::filesystem::path Path);
 	};
 }
+
+#endif // YAMLVVVFANALYZE_HPP

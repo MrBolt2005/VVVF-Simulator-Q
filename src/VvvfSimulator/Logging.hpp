@@ -26,10 +26,16 @@
 #include <type_traits>
 #include <typeinfo>
 
+// Package Includes
+#include <QDebug>
+#include <QMessageBox>
+#include <QtGlobal>
+#include <QWidget>
+
 // If compiling on MSVC:
 #if defined(_MSC_VER)
 
-#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __FUNCSIG__
+//#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __FUNCSIG__
 
 #include <cstring>
 
@@ -41,7 +47,7 @@
 // If compiling on GCC or Clang:
 #elif __has_include(<cxxabi.h>) // defined(__GNUC__) || defined(__clang__)
 
-#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __PRETTY_FUNCTION__
+//#define DEMANGLED_CURRENT_FUNCTION_SIGNATURE __PRETTY_FUNCTION__
 
 #include <cxxabi.h>
 
@@ -55,7 +61,7 @@ namespace VvvfSimulator::Logging
 		#if defined(_MSC_VER)
 
 		// Code for the MSVC ABI
-		std::array<char, 256> demangledName_arr;
+		std::array<char, 512> demangledName_arr;
 		const auto mangledName = typeid(callable).name();
 		int result = UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
 		if (result != 0)
@@ -85,6 +91,22 @@ namespace VvvfSimulator::Logging
 		#else
 		// This should not happen(!)
 		return typeid(callable).name();
-        #endif
+		#endif
 	}
+
+	template <typename... Args>
+  constexpr std::enable_if_t<(std::is_convertible_v<Args, std::string> && ...), std::string>
+  colonConcatenate(Args&&... args)
+  {
+		std::array<std::string, sizeof...(Args)> strings = { std::forward<Args>(args)... };
+		std::string result;
+		for (auto it = strings.begin(); it != strings.end(); it++)
+		{
+    	result += *it;
+    	if (it != strings.end() - 1) result += ": ";
+		}
+		return result;
+	}
+
+	void consoleAndMsgBoxLog(const QString& msg, const QMessageLogContext& context, QtMsgType type = QtMsgType::QtInfoMsg, QWidget *parent = nullptr);
 }

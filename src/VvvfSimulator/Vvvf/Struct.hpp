@@ -23,25 +23,86 @@
 // Internal Includes
 #include "InternalMath.hpp"
 #include "Namespace_VVVF.h"
-#include "../random/xoshiro256.hpp"
+#include "../Random/xoshiro256.hpp"
 #include "../Yaml/VvvfSound/YamlVvvfAnalyze.hpp"
 // Standard Library Includes
 #include <cinttypes>
 #include <map>
+#include <optional>
+#include <stdexcept>
 // Package Includes
 #include <QVector>
 
 namespace NAMESPACE_VVVF::Struct
 {
-	#pragma pack(sizeof(int_fast8_t))
+	using namespace NAMESPACE_VVVF::InternalMath;
+	using YamlPulseMode = NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData::YamlControlData::YamlPulseMode;
+  	using PulseTypeName = YamlPulseMode::PulseTypeName;
+		using PulseAlternative = YamlPulseMode::PulseAlternative; // Commented out as it is not a type name
+		using PulseDataKey = YamlPulseMode::PulseDataKey;
+	
+	#pragma pack(1) // sizeof(int_fast8_t)
 	struct WaveValues
 	{
+		static int_fast8_t nullValue;
 		int_fast8_t U, V, W;
 
 		          WaveValues() = default;
 		constexpr WaveValues(int_fast8_t u, int_fast8_t v, int_fast8_t w) :
 			U(u), V(v), W(w)
 		{}
+
+		constexpr std::optional<int_fast8_t&> optAt(size_t i)
+		{
+			switch (i)
+			{
+			case 0:
+				return U;
+				break;
+			case 1:
+				return V;
+				break;
+			case 2:
+				return W;
+				break;
+			default:
+				return std::nullopt;
+			}
+		}
+
+		constexpr std::optional<const int_fast8_t&> optAt(size_t i) const
+		{
+			switch (i)
+			{
+			case 0:
+				return U;
+				break;
+			case 1:
+				return V;
+				break;
+			case 2:
+				return W;
+				break;
+			default:
+				return std::nullopt;
+			}
+		}
+
+		constexpr int_fast8_t& operator[](size_t i)
+		{
+			const auto value = optAt(i);
+			if (!value)
+				throw std::out_of_range("Index out of range");
+			return *value;
+		}
+
+		constexpr const int_fast8_t& operator[](size_t i) const
+		{
+			const auto value = optAt(i);
+			if (!value)
+				throw std::out_of_range("Index out of range");
+			return *value;
+		}
 	};
 
 	struct CarrierFreq
@@ -56,8 +117,6 @@ namespace NAMESPACE_VVVF::Struct
 
 	struct VvvfValues
 	{
-		using VvvfSimulator::random::xoshiro256ss;
-	
 		double controlFrequency  = 0.0;
 		double freeFreqChange    = 0.0;
 		bool   brake             = false;
@@ -69,7 +128,7 @@ namespace NAMESPACE_VVVF::Struct
 
 		void resetControlValues();
 
-		xoshiro256ss rnd();
+		VvvfSimulator::Random::xoshiro256ss rnd{};
 
 		//--- from vvvf wave calculate
 		//sin value definitions
@@ -82,9 +141,9 @@ namespace NAMESPACE_VVVF::Struct
 		double randomFreqPreviousTime   = 0.0;
 		double periodicFreqPreviousTime = 0.0;
 
-		constexpr double getSinFreq() const
+		constexpr double getSinFreq() const noexcept
 		{
-			return sinAngleFreq * M_1_2PI;
+			return sinAngleFreq * m_1_2PI;
 		}
 
 		void resetMathematicValues();
@@ -100,6 +159,8 @@ namespace NAMESPACE_VVVF::Struct
 		double generationCurrentTime = 0.0;
 		//
 		VvvfValues(const VvvfValues& control);
+
+		VvvfValues();
 	};
 
 	struct PwmCalculateValues

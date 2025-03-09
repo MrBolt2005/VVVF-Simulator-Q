@@ -39,12 +39,14 @@ namespace NAMESPACE_VVVF::InternalMath
 	constexpr double m_PI      = M_PI;     // 3.14159265358
 	constexpr double m_PI_2    = M_PI_2;   // 1.57079632679
 	constexpr double m_PI_3    = 1.04719755119;
-	constexpr double m_PI_4    = M_PI_4;   // 0.78539816339
+	constexpr double m_PI_4    = 0.78539816339;   // M_PI_4
 	constexpr double m_PI_6    = 0.52359877559;
 	constexpr double m_PI_180  = 0.01745329251;
 
 	constexpr double m_SQRT3   = 1.73205080757;
 	constexpr double m_SQRT3_2 = 0.86602540378;
+
+	constexpr double m_E       = M_E;      // 2.71828182846
 
 	class Functions
 	{
@@ -58,15 +60,17 @@ namespace NAMESPACE_VVVF::InternalMath
 		       static double square(double x);
 		inline static double cosine(double x)
 		{
-			return getSineFunction() == SineFunctions::StandardLibrary ? std::cos(x) : _sine(x + M_PI_4);
+			return getSineFunction() == SineFunctions::StandardLibrary ? std::cos(x) : _sine(x + m_PI_4);
 		}
+		       static double modifiedSine(double x, double level);
+					 static double modifiedSaw(double x);
 
 		enum class SineFunctions
 		{
 			GetFail          = -1,
 			StandardLibrary  =  0,
 			InternalFastSine =  1,
-			QtFastSine       =  2
+			QFastSin         =  2
 		};
 		
 		static bool          setSineFunction(SineFunctions newSetting);
@@ -112,7 +116,7 @@ namespace NAMESPACE_VVVF::InternalMath
 			{
 				return Point2d(std::max(a.X, b.X), std::max(a.Y, b.Y));
 			}
-			inline static Point2d min(const Point2d& a, const Point2d& b)
+			constexpr static Point2d min(const Point2d& a, const Point2d& b)
 			{
 				return Point2d(std::min(a.X, b.X), std::min(a.Y, b.Y));
 			}
@@ -138,7 +142,7 @@ namespace NAMESPACE_VVVF::InternalMath
 		public:
 			Function function;
 			double dx{};
-			NewtonMethod(Function fun, double d) : function(fun), dx(d) {}
+			constexpr NewtonMethod(Function fun, double d) : function(fun), dx(d) {}
 
 			double calculate(double begin, double tolerance, unsigned n); 
 		};

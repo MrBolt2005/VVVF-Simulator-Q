@@ -1,5 +1,6 @@
 // Internal Includes
 #include <BufferedWaveIODevice.hpp>
+#include <GenerateCommon.hpp>
 #include <Struct.hpp>
 #include <YamlVvvfAnalyze.hpp>
 // STL Includes
@@ -13,28 +14,27 @@
 #include <QDir>
 #include <QFile>
 #include <QObject>
-#include <QScopedPointer>
 
-namespace VvvfSimulator::Generation::Audio::VvvfSound
+namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 {
 	class BufferedWaveFileWriter : public QObject
 	{
 		Q_OBJECT
 		using VvvfSimulator::Generation::Audio::BufferedWaveIODevice;
 
-		QScopedPointer<BufferedWaveIODevice> m_Buffer;
-		QScopedPointer<QAudioSink> m_audioSink;
+		BufferedWaveIODevice *m_Buffer;
+		QAudioSink *m_audioSink;
 		QFile m_file;
 
 	public:
 		BufferedWaveFileWriter(const QDir& path, int samplingFrequency = 80000, QObject *parent = nullptr);
-		BufferedWaveFileWriter(const QDir& path, const QAudioFormat& audioFormat, QObject *parent = nullptr);
+		//BufferedWaveFileWriter(const QDir& path, const QAudioFormat& audioFormat, QObject *parent = nullptr);
 		~BufferedWaveFileWriter() override;
 		void addSample(const QByteArray& sample);
-	//	void start();
+		//void start();
 		QByteArray floatToByteArray(float value);
 	};
-	static void downSample(int newSamplingRate, const QString& inputPath, const QDir& outputPath, bool deleteOld);
+	static void downSample(int newSamplingRate, const QDir& inputPath, const QDir& outputPath, bool deleteOld);
 
 	using GetSampleFunctional = std::function<std::vector<float>(VvvfValues, YamlVvvfSoundData)>;
 

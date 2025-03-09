@@ -19,21 +19,39 @@
 
 // Internal Includes
 #include "InternalMath.hpp" // To specialize
+// Package Includes
+#include <QtMath>
+
+std::function<double(double)> NAMESPACE_VVVF::InternalMath::Functions::_sine = static_cast<double(*)(double)>(std::sin);
 
 double NAMESPACE_VVVF::InternalMath::Functions::saw(double x)
 {
-	double fixed_x = x - std::floor(x * M_1_2PI) * M_2PI;
-	if (0 <= fixed_x && fixed_x < M_PI_2)
-		return -(M_2_PI * fixed_x);
-	else if (M_PI_2 <= fixed_x && fixed_x < 3.0 * M_PI_2)
-		return M_2_PI * fixed_x - 2;
-	else return 4 - M_2_PI * fixed_x;
+	double fixed_x = x - std::floor(x * m_1_2PI) * m_2PI;
+	if (0 <= fixed_x && fixed_x < m_PI_2)
+		return -(m_2_PI * fixed_x);
+	else if (m_PI_2 <= fixed_x && fixed_x < 3.0 * m_PI_2)
+		return m_2_PI * fixed_x - 2;
+	else return 4 - m_2_PI * fixed_x;
 }
 
 double NAMESPACE_VVVF::InternalMath::Functions::square(double x)
 {
-	double fixed_x = x - std::floor(x * M_1_2PI) * M_2PI;
-	return (fixed_x * M_1_PI > 1) ? -1 : 1;
+	double fixed_x = x - std::floor(x * m_1_2PI) * m_2PI;
+	return (fixed_x * m_1_PI > 1) ? -1 : 1;
+}
+
+double NAMESPACE_VVVF::InternalMath::Functions::modifiedSine(double x, double level)
+{
+	double Sine = sine(x) * level;
+	return std::round(Sine) / level;
+}
+
+double NAMESPACE_VVVF::InternalMath::Functions::modifiedSaw(double x)
+{
+	double Saw = -saw(x) * m_PI_2;
+	if (std::abs(Saw) > 0.5) Saw = Saw > 0.0 ? 1.0 : -1.0;
+	
+	return Saw;
 }
 
 bool NAMESPACE_VVVF::InternalMath::Functions::setSineFunction(SineFunctions newSetting)
@@ -48,8 +66,11 @@ bool NAMESPACE_VVVF::InternalMath::Functions::setSineFunction(SineFunctions newS
 		_sine = sineFast;
 		return true;
 		break;
-	case SineFunctions::QtFastSine;
-		//
+	case SineFunctions::QFastSin:
+		if constexpr (std::is_same<qreal, double>::value)
+			_sine = qFastSin;
+		else
+			_sine = [&](double x) { return static_cast<double>(qFastSin(static_cast<qreal>(x))); };
 		return true;
 		break;
 	default:
@@ -57,25 +78,27 @@ bool NAMESPACE_VVVF::InternalMath::Functions::setSineFunction(SineFunctions newS
 	};
 }
 
-SineFunctions NAMESPACE_VVVF::InternalMath::Functions::setSineFunction()
+SineFunctions NAMESPACE_VVVF::InternalMath::Functions::getSineFunction()
 {
-	switch (_sine)
-	{
-	case static_cast<double(*)(double)>(std::sin):
-		return StandardLibrary;
-		break;
-	case sineFast:
-		return InternalFastSine;
-		break;
-	case /**/:
-		return QtFastSine;
-		break;
-	default:
-		return GetFail;
-	};
+    if (_sine.target<double(*)(double)>() == static_cast<double(*)(double)>(std::sin))
+    {
+        return SineFunctions::StandardLibrary;
+    }
+    else if (_sine.target<double(*)(double)>() == sineFast)
+    {
+        return SineFunctions::InternalFastSine;
+    }
+    else if (_sine.target<double(*)(double)>() == /* QtFastSine function pointer */)
+    {
+        return SineFunctions::QFastSin;
+    }
+    else
+    {
+        return SineFunctions::GetFail;
+    }
 }
 
-NAMESPACE_VVVF::InternalMath::EquationSolver::NewtonMethod::calculate(double begin, double tolerance, unsigned n)
+double NAMESPACE_VVVF::InternalMath::EquationSolver::NewtonMethod::calculate(double begin, double tolerance, unsigned n)
 {
 	tolerance = std::fabs(tolerance);
 	double x = begin;
