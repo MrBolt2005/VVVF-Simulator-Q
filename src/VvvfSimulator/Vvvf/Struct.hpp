@@ -31,6 +31,7 @@
 #include <optional>
 #include <stdexcept>
 // Package Includes
+#include <QString>
 #include <QVector>
 
 namespace NAMESPACE_VVVF::Struct
@@ -103,6 +104,16 @@ namespace NAMESPACE_VVVF::Struct
 				throw std::out_of_range("Index out of range");
 			return *value;
 		}
+
+		constexpr bool operator==(const WaveValues &other) const noexcept
+		{
+			return this->U == other.U && this->V == other.V && this->W == other.W;
+		}
+
+		constexpr bool operator!=(const WaveValues &other) const noexcept
+		{
+			return !(*this == other);
+		}
 	};
 
 	struct CarrierFreq
@@ -161,6 +172,8 @@ namespace NAMESPACE_VVVF::Struct
 		VvvfValues(const VvvfValues& control);
 
 		VvvfValues();
+
+		QStringList getPulseName() const;
 	};
 
 	struct PwmCalculateValues
@@ -187,7 +200,7 @@ namespace NAMESPACE_VVVF::Struct
 		       QVector<PulseAlternative> getPulseAlternatives(PulseTypeName pulseType, double pulseCount, int level);
 		inline QVector<PulseAlternative> getPulseAlternatives(const YamlPulseMode& pulseMode, int level)
 		{
-			return getPulseAlternatives(pulseMode.pulseType, pulseMode.pulseCount, level);
+			return getPulseAlternatives(pulseMode.PulseType, pulseMode.PulseCount, level);
 		}
 	}
 }

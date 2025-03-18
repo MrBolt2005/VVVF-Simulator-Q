@@ -33,6 +33,18 @@ namespace VvvfSimulator::Generation::GenerationCommon
 	{
 		Q_OBJECT
 
+		public:
+		GenerationVideoWriter(
+			const QDir& filename,
+			const int width,
+			const int height,
+			const double fps,
+			const AVCodecID codecID,
+			const av::PixelFormat pixelFormat = av::PixelFormat(bestCompatiblePixelFormat),
+			bool openOnCreation = false,
+			QObject* parent = nullptr) :
+		QtVideoWriter(filename, width, height, fps, codecID, pixelFormat, openOnCreation, parent) {}
+
 	public slots:
 		void addEmptyFrames(size_t numFrames, bool darkMode = false);
 		void addImageFrames(const QImage& image, size_t numFrames);

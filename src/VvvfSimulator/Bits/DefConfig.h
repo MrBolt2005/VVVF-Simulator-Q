@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DEFCONFIG_H
+#define DEFCONFIG_H
 
 /*
    Copyright © 2025 VvvfGeeks, VVVF Systems
@@ -16,16 +17,17 @@
    limitations under the License.
 */
 
-// YamlMasconControl.hpp
+// DefConfig.h
 // Version 1.9.1.1
 
-// Standard Library
-#include <algorithm>
-#include <vector>
-// Internal
-#include "Namespace_YamlMasconControl.h"
+#ifdef _MSC_VER
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
 
-namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
+namespace std
 {
-	
+	using ::ssize_t;
 }
+#endif // _MSC_VER
+
+#endif // DEFCONFIG_H

@@ -1,0 +1,148 @@
+#include "LoadMidi.qml.hpp"
+
+// Packages
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QFileDialog>
+#include <QMimeData>
+
+namespace VvvfSimulator::GUI::Mascon
+{
+	LoadMidi::LoadMidi(QWindow *parent) :
+		QQuickWindow(parent),
+		m_container(QWidget::createWindowContainer(this)),
+		m_layout(new QVBoxLayout(m_container)),
+		m_selectFileButton(new QPushButton(QObject::tr("Select File"), m_container)),
+		m_fileTextBox(new QLineEdit(m_container)),
+		m_trackTextBox(new QLineEdit(m_container)),
+		m_priorityTextBox(new QLineEdit(m_container)),
+		m_divisionTextBox(new QLineEdit(m_container))//,
+		//m_fileWatcher(new QFileSystemWatcher(this))
+	{
+		this->installEventFilter(this);
+		
+		m_container->setLayout(m_layout);
+		m_fileTextBox->setReadOnly(true);
+
+		// Connect signals to slots
+		connect(m_trackTextBox, &QLineEdit::textChanged, this, &LoadMidi::trackTextBox_TextChanged);
+		connect(m_priorityTextBox, &QLineEdit::textChanged, this, &LoadMidi::priorityTextBox_TextChanged);
+		connect(m_divisionTextBox, &QLineEdit::textChanged, this, &LoadMidi::divisionTextBox_TextChanged);
+		connect(m_selectFileButton, &QPushButton::clicked, this, &LoadMidi::selectFileButtonClick);
+
+		// Connect QFileSystemWatcher signal to slot
+		//connect(m_fileWatcher, &QFileSystemWatcher::directoryChanged, this, &LoadMidi::directoryChanged);
+
+		// Enable drag and drop
+		m_container->setAcceptDrops(true);
+	}
+
+	bool LoadMidi::eventFilter(QObject *obj, QEvent *event)
+	{
+		if (event->type() == QEvent::DragEnter)
+		{
+			QDragEnterEvent *dragEvent = static_cast<QDragEnterEvent *>(event);
+			if (dragEvent->mimeData()->hasUrls())
+			{
+				for (const QUrl &url : dragEvent->mimeData()->urls())
+				{
+					QString filePath = url.toLocalFile();
+					if (filePath.endsWith(".mid", Qt::CaseInsensitive) || filePath.endsWith(".midi", Qt::CaseInsensitive))
+					{
+						dragEvent->acceptProposedAction();
+						return true;
+					}
+				}
+			}
+			dragEvent->ignore();
+			return true;
+		}
+		else if (event->type() == QEvent::Drop)
+		{
+			QDropEvent *dropEvent = static_cast<QDropEvent *>(event);
+			if (dropEvent->mimeData()->hasUrls())
+			{
+				for (const QUrl &url : dropEvent->mimeData()->urls())
+				{
+					QString filePath = url.toLocalFile();
+					if (filePath.endsWith(".mid", Qt::CaseInsensitive) || filePath.endsWith(".midi", Qt::CaseInsensitive))
+					{
+						setPath(QDir(filePath));
+						dropEvent->acceptProposedAction();
+						return true;
+					}
+				}
+			}
+			dropEvent->ignore();
+			return true;
+		}
+		else
+			return QQuickWindow::eventFilter(obj, event);
+}
+
+	void LoadMidi::trackTextBox_TextChanged()
+	{
+		if (!m_ignoreUpdate)
+			m_loadConfiguration.track = std::clamp(m_trackTextBox->text().toInt(), 1, 16);
+	}
+
+	void LoadMidi::priorityTextBox_TextChanged()
+	{
+		if (!m_ignoreUpdate)
+			m_loadConfiguration.priority = std::clamp(m_priorityTextBox->text().toInt(), 1, 16);
+	}
+
+	void LoadMidi::divisionTextBox_TextChanged()
+	{
+		if (!m_ignoreUpdate)
+			m_loadConfiguration.division = m_divisionTextBox->text().toDouble();
+	}
+
+	bool LoadMidi::selectFileButtonClick()
+    {
+			if (m_ignoreUpdate) return false;
+			// Summon a file dialog box with filters for MIDI files and all files
+			QString fileName = QFileDialog::getOpenFileName(
+				m_container,
+				QObject::tr("Select MIDI File"),
+				"",
+				QObject::tr("MIDI Files (*.mid *.midi);;All Files (*)"));
+      if (!fileName.isEmpty()) return setPath(QDir(fileName));
+			else return false;
+    }
+
+	int LoadMidi::setTrack(int track)
+	{
+		if (m_ignoreUpdate) return -1;
+		m_loadConfiguration.track = std::clamp(track, 1, 16);
+		m_trackTextBox->setText(QString::number(m_loadConfiguration.track));
+		return m_loadConfiguration.track;
+	}
+
+	int LoadMidi::setPriority(int priority)
+	{
+		if (m_ignoreUpdate) return -1;
+		m_loadConfiguration.priority = std::clamp(priority, 1, 16);
+		m_priorityTextBox->setText(QString::number(m_loadConfiguration.priority));
+		return m_loadConfiguration.priority;
+	}
+
+	bool LoadMidi::setDivision(double division)
+	{
+		if (m_ignoreUpdate) return false;
+		m_loadConfiguration.division = division;
+		m_divisionTextBox->setText(QString::number(m_loadConfiguration.division));
+		return true;
+	}
+	
+	bool LoadMidi::setPath(const QDir& path)
+	{
+		if (!(m_ignoreUpdate || path == m_loadConfiguration.path))
+		{
+			m_loadConfiguration.path = path;
+			m_fileTextBox->setText(path.absolutePath());
+			return true;
+		}
+		else return false;
+	}
+}

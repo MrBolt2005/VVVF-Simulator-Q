@@ -42,7 +42,7 @@ namespace VvvfSimulator::Generation::Video::FFT
 			QVector<WaveValues> PWM_Array = VvvfSimulator::Generation::GenerateBasic::WaveForm::getUVWSec(control, sound, m_PI_6, std::pow(2, Pow) - 1, false);
 			QVector<std::complex<qreal>> FFT = FFTNAudio(PWM_Array);
 
-			QImage image(size, QImage::Format_RGB888);
+			QImage image(size, QImage::Format_RGB32);
 			QPainter painter(&image);
 
 			image.fill(darkMode ? QColorConstants::Black : QColorConstants::White);
@@ -50,15 +50,15 @@ namespace VvvfSimulator::Generation::Video::FFT
 			static const QPen blackPen = QPen(QColorConstants::Black), whitePen = QPen(QColorConstants::White);
 			painter.setPen(darkMode ? whitePen : blackPen);
 
-			const int64_t width = size.width(), height = size.height();
+			const auto &width = size.width(), &height = size.height();
 
 			for (int i = 0; i < width - 1; i++)
 			{
 				const auto Rindex = static_cast<qsizetype>(m_PI * i);
 				const qreal Ri = std::abs(FFT[Rindex]);
 				const qreal Rii = std::abs(FFT[Rindex + 1]);
-				const QPointF start(i, height - Ri * static_cast<qreal>(height * 2));
-				const QPointF end(i + 1, height - Rii * static_cast<qreal>(height * 2));
+				const QPointF start(i, height - Ri * static_cast<qreal>(static_cast<int64_t>(height) * 2));
+				const QPointF end(i + 1, height - Rii * static_cast<qreal>(static_cast<int64_t>(height) * 2));
 				painter.drawLine(start, end);
 			}
 
@@ -176,5 +176,13 @@ namespace VvvfSimulator::Generation::Video::FFT
 		viewer->setPixmap(QPixmap::fromImage(image));
 		image.save(fileName.absolutePath(), exportFormat);
 		if (output) *output = image;
+
+    // Extract the file name and append it to the viewer's title
+    const QFileInfo fileInfo(fileName.absolutePath());
+    const QString fileNameWithExtension = fileInfo.fileName();
+    viewer->setWindowTitle(viewer->bindingData().view().windowTitle() + " - " + fileNameWithExtension);
+
+		// Wait for window to close
+		while (viewer->bindingData().view().isVisible()) QApplication::processEvents();
 	}
 }

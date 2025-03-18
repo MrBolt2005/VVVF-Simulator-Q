@@ -27,6 +27,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <functional>
+#include <type_traits>
 // Package Includes
 #include <QVector>
 
@@ -75,6 +76,32 @@ namespace NAMESPACE_VVVF::InternalMath
 		
 		static bool          setSineFunction(SineFunctions newSetting);
 		static SineFunctions getSineFunction();
+
+		template <typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+		static constexpr T iPow(T base, T exp)
+		{
+			T result = 1;
+			if (exp > 0)
+			{
+				for (T i = 0; i < exp; i++)
+					result *= base;
+			}
+			else if (exp < 0)
+			{
+				for (T i = 0; i > exp; i--)
+					result /= base;
+			}
+			// else
+			return result; // 1
+		}
+
+		template <typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
+		static constexpr T iLog2(T x)
+		{
+			T result = 0;
+			while (x >>= 1) result++;
+			return result;
+		}
 	};
 
 	namespace EquationSolver
@@ -151,7 +178,7 @@ namespace NAMESPACE_VVVF::InternalMath
 			Function function;
 			BisectionMethod(Function fun) : function(fun) {}
 
-			double calculate(double begin, double tolerance, unsigned N);
+			double calculate(double x0, double x1, double tolerance, unsigned N);
 		};
 		double calculateLagrangePolynomial(double x, const QVector<Point2d>& points);
 	}

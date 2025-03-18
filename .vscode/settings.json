@@ -106,6 +106,27 @@
     "qgraphicspixmapitem": "cpp",
     "qfuture": "cpp",
     "qapplication": "cpp",
-    "qpainter": "cpp"
+    "qpainter": "cpp",
+    "filesystem": "cpp",
+    "xlocale": "cpp",
+    "xiosbase": "cpp",
+    "resumable": "cpp",
+    "ios": "cpp",
+    "locale": "cpp",
+    "queue": "cpp",
+    "ranges": "cpp",
+    "xfacet": "cpp",
+    "xhash": "cpp",
+    "xlocbuf": "cpp",
+    "xlocinfo": "cpp",
+    "xlocmes": "cpp",
+    "xlocmon": "cpp",
+    "xlocnum": "cpp",
+    "xloctime": "cpp",
+    "xmemory": "cpp",
+    "xstring": "cpp",
+    "xtr1common": "cpp",
+    "xtree": "cpp",
+    "xutility": "cpp"
   }
 }

@@ -1,12 +1,14 @@
 // Standard Library
 #include <memory>
 // Packages
+#include <QEvent>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QImage>
 #include <QObject>
 #include <QPixmap>
+#include <QResizeEvent>
 #include <QSize>
 #include <QString>
 
@@ -31,6 +33,9 @@ namespace VvvfSimulator::GUI::Util
             QGraphicsScene* m_scene;
             QGraphicsPixmapItem* m_item;
 
+        protected:
+            bool eventFilter(QObject *obj, QEvent *event) override;
+
         public:
             //ViewModel();
             ViewModel(QObject* parent = nullptr);
@@ -45,11 +50,12 @@ namespace VvvfSimulator::GUI::Util
             constexpr const QGraphicsPixmapItem& item() const noexcept { return *m_item; }
 
         signals:
-					void propertyChanged(const QString &propertyName);	
-					void viewChanged(const QGraphicsView &newView);
-					void pixmapChanged(const QPixmap *newPixmap);
-					void sceneChanged(const QGraphicsScene *newScene);
-					void itemChanged(const QGraphicsPixmapItem *newItem);
+            void propertyChanged(const QString &propertyName);	
+            void viewChanged(const QGraphicsView &newView);
+            void viewSizeChanged(const QResizeEvent *resizeEvent);
+            void pixmapChanged(const QPixmap *newPixmap);
+            void sceneChanged(const QGraphicsScene *newScene);
+            void itemChanged(const QGraphicsPixmapItem *newItem);
 
         public slots:
             QPixmap* pixmap() const noexcept { return m_pixmap.get(); }
@@ -57,23 +63,23 @@ namespace VvvfSimulator::GUI::Util
         };
 
         ViewModel m_bindingData;
-				bool m_requireResize = true;
+		bool m_requireResize = true;
 
     public:
-			//BitmapViewer();  
-			BitmapViewer(QObject* parent = nullptr);
-			~BitmapViewer() noexcept override;
+		//BitmapViewer();  
+		BitmapViewer(QObject* parent = nullptr);
+		~BitmapViewer() noexcept override;
 		
-			constexpr bool requireResize() const noexcept { return requireResize; }
-			inline void setRequireResize(bool value) { 
-				if (m_requireResize != value) {
-					m_requireResize = value;
-					emit requireResizeChanged(requireResize());
-				}
-      }
+		constexpr bool requireResize() const noexcept { return requireResize; }
+		inline void setRequireResize(bool value) { 
+			if (m_requireResize != value) {
+		    	m_requireResize = value;
+				emit requireResizeChanged(requireResize());
+			}
+        }
 
-			void resize(const QSize &size) { m_bindingData.view().resize(size); }
-			void setWindowTitle(const QString &title) { m_bindingData.view().setWindowTitle(title); }
+		void resize(const QSize &size) { m_bindingData.view().resize(size); }
+		void setWindowTitle(const QString &title) { m_bindingData.view().setWindowTitle(title); }
 
     public slots:
         const ViewModel& bindingData() const noexcept { return m_bindingData; }
@@ -82,7 +88,8 @@ namespace VvvfSimulator::GUI::Util
         void close() { m_bindingData.view().close(); }
 
     signals:
-    void dataChanged(const QString &propertyName);    
+        void dataChanged(const QString &propertyName);    
 		void requireResizeChanged(bool newRequireResize);
+        void sizeChanged(const QResizeEvent *resizeEvent);
     };
 }

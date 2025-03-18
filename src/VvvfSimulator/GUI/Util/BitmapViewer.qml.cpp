@@ -11,6 +11,16 @@ namespace VvvfSimulator::GUI::Util
 	{}
 		*/
 
+	bool BitmapViewer::ViewModel::eventFilter(QObject *obj, QEvent *event)
+	{
+		if (obj == &m_view && event->type() == QEvent::Resize)
+		{
+			QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
+			emit viewSizeChanged(resizeEvent);
+		}
+		return QObject::eventFilter(obj, event);
+	}
+
 	BitmapViewer::ViewModel::ViewModel(QObject *parent) :
 		QObject(parent),
 		m_view(),
@@ -18,6 +28,8 @@ namespace VvvfSimulator::GUI::Util
 		m_scene(new QGraphicsScene(this)),
 		m_item(nullptr)
 	{
+		m_view.installEventFilter(this);
+
 		QObject::connect(this, &ViewModel::pixmapChanged, this, [&]() { emit propertyChanged(QStringLiteral("pixmap")); });
 		QObject::connect(this, &ViewModel::sceneChanged, this, [&]() { emit propertyChanged(QStringLiteral("scene")); });
 		QObject::connect(this, &ViewModel::viewChanged, this, [&]() { emit propertyChanged(QStringLiteral("view")); });
@@ -31,6 +43,8 @@ namespace VvvfSimulator::GUI::Util
 		m_scene(new QGraphicsScene(this)),
 		m_item(m_scene->addPixmap(*m_pixmap))
 	{
+		this->installEventFilter(this);
+
 		QObject::connect(this, &ViewModel::pixmapChanged, this, [&]() { emit propertyChanged(QStringLiteral("pixmap")); });
 		QObject::connect(this, &ViewModel::sceneChanged, this, [&]() { emit propertyChanged(QStringLiteral("scene")); });
 		QObject::connect(this, &ViewModel::viewChanged, this, [&]() { emit propertyChanged(QStringLiteral("view")); });
@@ -72,6 +86,7 @@ namespace VvvfSimulator::GUI::Util
 	BitmapViewer::BitmapViewer()
 	{
 		QObject::connect(&bindingData(), &BitmapViewer::ViewModel::propertyChanged, this, &BitmapViewer::dataChanged);
+		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::viewSizeChanged, this, &BitmapViewer::sizeChanged);
 	}
 		*/
 
@@ -79,6 +94,7 @@ namespace VvvfSimulator::GUI::Util
 		QObject(parent)
 	{
 		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::propertyChanged, this, &BitmapViewer::dataChanged);
+		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::viewSizeChanged, this, &BitmapViewer::sizeChanged);
 	}
 	
 	BitmapViewer::~BitmapViewer() noexcept = default;

@@ -1,0 +1,92 @@
+#pragma once
+
+/*
+   Copyright © 2025 VvvfGeeks, VVVF Systems
+   
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
+// LoadMidi.qml.hpp
+// Version 1.9.1.1
+
+// Packages
+#include <libremidi.hpp>
+#include <QDir>
+#include <QFileSystemWatcher>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QQuickWindow>
+#include <QVBoxLayout>
+
+namespace VvvfSimulator::GUI::Mascon
+{
+		class LoadMidi : public QQuickWindow
+		{
+			Q_OBJECT
+			Q_PROPERTY(MidiLoadData loadConfiguration READ constLoadConfiguration)
+			Q_PROPERTY(int track READ track WRITE setTrack)
+			Q_PROPERTY(int priority READ priority WRITE setPriority)
+			Q_PROPERTY(double division READ division WRITE setDivision)
+			Q_PROPERTY(QDir path READ path WRITE setPath)
+			Q_PROPERTY(bool ignoreUpdate READ ignoreUpdate)
+
+		public:
+			LoadMidi(QWindow *parent = nullptr);
+			struct MidiLoadData
+			{
+				int track = 1;
+				int priority = 1;
+				double division = 1;
+				QDir path{};
+			};
+
+		private:
+			QWidget *m_container;
+			QVBoxLayout *m_layout;
+			QPushButton *m_selectFileButton;
+			QLineEdit *m_fileTextBox, *m_trackTextBox, *m_priorityTextBox, *m_divisionTextBox;
+			//QFileSystemWatcher *m_fileWatcher;
+			MidiLoadData m_loadConfiguration;
+			bool m_ignoreUpdate = false;
+
+		public:
+			// Gets the current MIDI load configuration, passed by read-only reference.
+			constexpr const MidiLoadData& constLoadConfiguration() const noexcept { return m_loadConfiguration; }
+			// Gets the current MIDI load configuration, passed by value.
+			constexpr MidiLoadData loadConfiguration() const noexcept { return m_loadConfiguration; }
+			// Gets the current target MIDI track number.
+			constexpr int track() const noexcept { return m_loadConfiguration.track; }
+			// Gets the current target MIDI track priority.
+			constexpr int priority() const noexcept { return m_loadConfiguration.priority; }
+			// Gets the current target calculation precision division.
+			constexpr double division() const noexcept { return m_loadConfiguration.division; }
+			// Gets the current target MIDI file path.
+			constexpr QDir path() const noexcept { return m_loadConfiguration.path; }
+			// Gets whether the object is ignoring updates.
+			constexpr bool ignoreUpdate() const noexcept { return m_ignoreUpdate; }
+
+		protected:
+			bool eventFilter(QObject *watched, QEvent *event) override;
+
+		private slots:
+			void trackTextBox_TextChanged();
+			void priorityTextBox_TextChanged();
+			void divisionTextBox_TextChanged();
+			bool selectFileButtonClick();
+		public slots:
+			int setTrack(int track);
+			int setPriority(int priority);
+			bool setDivision(double division);
+			bool setPath(const QDir& path);
+		};
+}

@@ -23,9 +23,13 @@
 #include <algorithm>
 #include <vector>
 // Internal
-#include "Namespace_YamlMasconControl.h"
+#include "../../Exception.hpp"
+#include "../../GUI/Mascon/LoadMidi.qml.hpp"
 #include "../../Vvvf/InternalMath.hpp"
 #include "../../Vvvf/Struct.hpp"
+#include "./YamlMasconMidi.hpp"
+// Packages
+#include <QtTypes> // for qsizetype ("ssize_t")
 
 #if __cplusplus >= 202002L
 #define CXX20_CONSTEXPR constexpr
@@ -37,6 +41,7 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
 {
 	using NAMESPACE_VVVF::Struct::VvvfValues;
 	using NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData;
+	using MidiLoadData = VvvfSimulator::GUI::Mascon::LoadMidi::MidiLoadData;
 
 	struct YamlMasconData
 	{
@@ -52,6 +57,13 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
 			constexpr YamlMasconDataPoint(int Order) : order(Order) {}
 			constexpr YamlMasconDataPoint(const YamlMasconDataPoint &other) = default;
 			constexpr YamlMasconDataPoint(YamlMasconDataPoint &&other) = default;
+			constexpr YamlMasconDataPoint(
+				int Order,
+				double Rate,
+				double Duration,
+				bool Brake,
+				bool MasconOn
+			) : order(Order), rate(Rate), duration(Duration), brake(Brake), masconOn(MasconOn) {}
 
 			constexpr YamlMasconDataPoint& operator=(const YamlMasconDataPoint &other) = default;
 			constexpr YamlMasconDataPoint& operator=(YamlMasconDataPoint &&other) = default;
@@ -62,6 +74,39 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
 		constexpr       YamlMasconData() = default;
 		CXX20_CONSTEXPR YamlMasconData(const YamlMasconData &other) : points(other.points) {}
 		CXX20_CONSTEXPR YamlMasconData(YamlMasconData &&other) : points(std::move(other.points)) {}
+
+		CXX20_CONSTEXPR YamlMasconData& operator=(const YamlMasconData &other)
+		{
+			if (this != &other) points = other.points;
+			return *this;
+		}
+
+		CXX20_CONSTEXPR YamlMasconData& operator=(YamlMasconData &&other)
+		{
+			if (this != &other) points = std::move(other.points);
+			return *this;
+		}
+
+		YamlMasconData(const MidiLoadData &loadData)
+		{
+			auto conversion = YamlMasconMidi::convert(loadData);
+			if (!conversion)
+			{
+				const QMessageLogContext context = { __FILE__, __LINE__, Q_FUNC_INFO, "Constructor Error" };
+				const QVariantMap details =
+				{
+					{"track", loadData.track},
+					{"priority", loadData.priority},
+					{"division", loadData.division},
+					{"path", loadData.path.path()},
+					{"absolutePath", loadData.path.absolutePath()},
+					{"error", conversion.error()}
+				};
+				throw VvvfSimulator::Exception::VvvfException(conversion.error().toUtf8().constData(), &context, &details);
+			}
+			// else
+			*this = std::move(conversion.value());
+		}
 
 		CXX20_CONSTEXPR double getEstimatedSteps(double sampleTime) const
 		{
@@ -160,11 +205,11 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
 		}
 
 		// YamlMasconControl.cs
-		CXX20_CONSTEXPR ssize_t getPointAtNum(double time) const
+		CXX20_CONSTEXPR qsizetype getPointAtNum(double time) const
 		{
 			if (time < points.front().startTime || points.back().endTime < time) return -1;
 
-			ssize_t E_L = 0, E_R = points.size() - 1, pos = (E_R - E_L) / 2 + E_L;
+			qsizetype E_L = 0, E_R = points.size() - 1, pos = (E_R - E_L) / 2 + E_L;
 			while (true)
 			{
 				if (points[pos].startTime <= time && time < points[pos].endTime) return pos;
@@ -200,8 +245,8 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze
 			auto dataAt = getPointAtNum(currentTime);
 			if (dataAt < 0) return false;
 			const auto *target = &(points.at(dataAt));
-			const auto *nextTarget = dataAt + 1 < points.size() ? &points.at(dataAt + 1) : nullptr;
-			const auto *previousTarget = dataAt - 1 >= 0 ? &points.at(dataAt - 1) : nullptr;
+			const YamlMasconDataCompiledPoint *nextTarget = dataAt + 1 < points.size() ? &points.at(dataAt + 1) : nullptr;
+			const YamlMasconDataCompiledPoint *previousTarget = dataAt - 1 >= 0 ? &points.at(dataAt - 1) : nullptr;
 
 			bool braking = target->isAccel, isMasconOn = target->isMasconOn;
 			double forceOnFrequency = -1.0;

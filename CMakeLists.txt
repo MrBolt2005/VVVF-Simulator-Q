@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 project(VvvfSimulator VERSION 1.0 LANGUAGES CXX)
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Enable AUTOMOC
@@ -15,6 +15,11 @@ set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Qt/6.8.1/msvc2022_64" "C:/dev/vcp
 
 # Set the CMAKE_TOOLCHAIN_FILE to use vcpkg
 set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake")
+
+# Add the /Zc:__cplusplus flag for MSVC
+if (MSVC)
+    add_compile_options(/Zc:__cplusplus)
+endif()
 
 # Find the required Qt packages
 find_package(Qt6 REQUIRED COMPONENTS Core Quick QuickControls2)

@@ -65,7 +65,7 @@ namespace VvvfSimulator::Logging
 		const auto mangledName = typeid(callable).name();
 		int result = UnDecorateSymbolName(mangledName, demangledName_arr, demangledName_arr.size(), UNDNAME_COMPLETE);
 		if (result != 0)
-			return std::string(demangledName_arr);
+			return std::string(demangledName_arr.data());
 		else return std::unexpected(GetLastError());
 
 		#elif __has_include(<cxxabi.h>)

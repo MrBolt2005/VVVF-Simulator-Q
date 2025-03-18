@@ -3,7 +3,7 @@
 // Standard Library
 #include <complex>
 #include <memory>
-#include <pair>
+//#include <pair>
 #include <type_traits>
 // Internal
 #include "../../../GUI/Util/BitmapViewer.qml.hpp"
@@ -44,8 +44,8 @@ namespace VvvfSimulator::Generation::Video::FFT
 		//std::shared_ptr<BitmapViewer> m_viewer = nullptr;
 
 	public:
-		constexpr       std::shared_ptr<BitmapViewer>       viewer() const noexcept { return m_viewer; }
-		constexpr const std::shared_ptr<BitmapViewer>& constViewer() const noexcept { return m_viewer; }
+		//constexpr       std::shared_ptr<BitmapViewer>       viewer() const noexcept { return m_viewer; }
+		//constexpr const std::shared_ptr<BitmapViewer>& constViewer() const noexcept { return m_viewer; }
 
 		/// <summary>
 		/// Gets image of FFT.

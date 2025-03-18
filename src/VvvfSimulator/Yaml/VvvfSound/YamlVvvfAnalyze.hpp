@@ -21,6 +21,7 @@
 // Version 1.9.1.1
 
 // Internal Includes
+#include "../../Bits/CxxConfig.h"
 #include "Namespace_YamlVvvfSound.h"
 #include "../RflCppFormats.hpp"
 // Standard Library Includes
@@ -357,9 +358,62 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 		YamlMasconData MasconData;
 		YamlMinSineFrequency MinimumFrequency;
 		std::vector<YamlControlData> AcceleratePattern{}, BrakingPattern{};
-		void sortAcceleratePattern(bool inverse);
-		void sortBrakingPattern   (bool inverse);
-		bool hasCustomPwm         ();
+		CXX20_CONSTEXPR void sortAcceleratePattern(bool inverse)
+		{
+			if (inverse)
+				std::sort(AcceleratePattern.begin(), AcceleratePattern.end(), [](const auto &a, const auto &b)
+				{
+					return a.ControlFrequencyFrom > b.ControlFrequencyFrom;
+				});
+			else
+				std::sort(AcceleratePattern.begin(), AcceleratePattern.end(), [](const auto &a, const auto &b)
+				{
+					return a.ControlFrequencyFrom < b.ControlFrequencyFrom;
+				});
+		}
+		CXX20_CONSTEXPR void sortBrakingPattern   (bool inverse)
+		{
+			if (inverse)
+				std::sort(BrakingPattern.begin(), BrakingPattern.end(), [](const auto &a, const auto &b)
+				{
+					return a.ControlFrequencyFrom > b.ControlFrequencyFrom;
+				});
+			else
+				std::sort(BrakingPattern.begin(), BrakingPattern.end(), [](const auto &a, const auto &b)
+				{
+					return a.ControlFrequencyFrom < b.ControlFrequencyFrom;
+				});
+		}
+		CXX20_CONSTEXPR bool hasCustomPwm         ()
+		{
+			for (const auto &data : AcceleratePattern)
+				if (data.PulseMode.PulseType == YamlControlData::YamlPulseMode::PulseTypeName::CHM ||
+					data.PulseMode.PulseType == YamlControlData::YamlPulseMode::PulseTypeName::SHE)
+					return true;
+			for (const auto &data : BrakingPattern)
+				if (data.PulseMode.PulseType == YamlControlData::YamlPulseMode::PulseTypeName::CHM ||
+					data.PulseMode.PulseType == YamlControlData::YamlPulseMode::PulseTypeName::SHE)
+					return true;
+			return false;
+		}
+
+		CXX20_CONSTEXPR void setFreeRunModulationIndexToZero()
+		{
+			for (auto &data : AcceleratePattern)
+			{
+				data.Amplitude.PowerOff.StartAmplitude = 0.0;
+				data.Amplitude.PowerOff.StartFrequency = 0.0;
+				data.Amplitude.PowerOn.StartAmplitude  = 0.0;
+				data.Amplitude.PowerOn.StartFrequency  = 0.0;
+			}
+			for (auto &data : BrakingPattern)
+			{
+				data.Amplitude.PowerOff.StartAmplitude = 0.0;
+				data.Amplitude.PowerOff.StartFrequency = 0.0;
+				data.Amplitude.PowerOn.StartAmplitude  = 0.0;
+				data.Amplitude.PowerOn.StartFrequency  = 0.0;
+			}
+		}
 
 		YamlVvvfSoundData(RflCppFormats format, std::filesystem::path Path);
 		
