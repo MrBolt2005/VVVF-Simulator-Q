@@ -46,8 +46,9 @@ namespace VvvfSimulator::Random
 	public:
 		static constexpr uint64_t defaultSeed = 0;
 	
-		constexpr xoshiro256ss() { *this = xoshiro256ss(defaultSeed); }
-		constexpr xoshiro256ss(uint64_t Seed)
+		//constexpr xoshiro256ss() { *this = xoshiro256ss(defaultSeed); }
+		//constexpr xoshiro256ss(uint64_t Seed)
+		constexpr xoshiro256ss(uint64_t Seed = defaultSeed)
 		{
 			seed(Seed);
 		}

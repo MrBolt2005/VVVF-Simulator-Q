@@ -17,7 +17,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "D:/Qt/6.8.1/msvc2022_64/include/**",
+                //"D:/Qt/6.8.2/msvc2022_64/include/**",
                 "C:/dev/vcpkg/installed/x64-windows/include/**",
+                "${workspaceFolder}/../DSPFilters/**",
                 "${workspaceFolder}/../qt-notification"//,
                 //"C:/msys64/ucrt64/include/**"
             ],

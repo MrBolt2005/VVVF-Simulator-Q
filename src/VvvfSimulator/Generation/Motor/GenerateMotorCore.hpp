@@ -23,11 +23,11 @@ namespace VvvfSimulator::Generation::Motor::GenerateMotorCore
 		double INERTIA = 0.05;     // rotational inertia mass (kg*m^2)
 		double STATICF = 0.005879; // static friction coefficient (N*m*s)
 
-		constexpr MotorSpecification() = default;
-		constexpr MotorSpecification(double R_s, double R_r, double L_s, double L_r, double L_m, double NP, double DAMPING, double INERTIA, double STATICF) :
+		constexpr MotorSpecification() noexcept = default;
+		constexpr MotorSpecification(double R_s, double R_r, double L_s, double L_r, double L_m, double NP, double DAMPING, double INERTIA, double STATICF) noexcept :
 			R_s(R_s), R_r(R_r), L_s(L_s), L_r(L_r), L_m(L_m), NP(NP), DAMPING(DAMPING), INERTIA(INERTIA), STATICF(STATICF) {}
-		constexpr MotorSpecification(const MotorSpecification& other) = default;
-		constexpr MotorSpecification(MotorSpecification&& other) = default;
+		constexpr MotorSpecification(const MotorSpecification& other) noexcept = default;
+		constexpr MotorSpecification(MotorSpecification&& other) noexcept = default;
 	};
 
 	struct MotorParameter

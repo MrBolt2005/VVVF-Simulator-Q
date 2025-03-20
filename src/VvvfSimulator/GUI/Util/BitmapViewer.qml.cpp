@@ -1,101 +1,59 @@
 #include "BitmapViewer.qml.hpp"
 
+/*
+	 Copyright © 2025 VvvfGeeks, VVVF Systems
+	 
+	 Licensed under the Apache License, Version 2.0 (the "License");
+	 you may not use this file except in compliance with the License.
+	 You may obtain a copy of the License at
+
+			 http://www.apache.org/licenses/LICENSE-2.0
+
+	 Unless required by applicable law or agreed to in writing, software
+	 distributed under the License is distributed on an "AS IS" BASIS,
+	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 See the License for the specific language governing permissions and
+	 limitations under the License.
+*/
+
+// BitmapViewer.qml.cpp
+// Version 1.9.1.1
+
 namespace VvvfSimulator::GUI::Util
 {
-	/*
-	BitmapViewer::ViewModel::ViewModel() :
-		m_view(),
-		m_pixmap(nullptr),
-		m_scene(new QGraphicsScene(this)),
-		m_item(nullptr)
-	{}
-		*/
-
-	bool BitmapViewer::ViewModel::eventFilter(QObject *obj, QEvent *event)
-	{
-		if (obj == &m_view && event->type() == QEvent::Resize)
-		{
-			QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
-			emit viewSizeChanged(resizeEvent);
-		}
-		return QObject::eventFilter(obj, event);
-	}
-
-	BitmapViewer::ViewModel::ViewModel(QObject *parent) :
+	BitmapViewer::BitmapViewer(
+		const QPixmap &pixmap,
+		const QString &title,
+		const QSize *size = nullptr,
+		QObject *parent
+	) :
 		QObject(parent),
-		m_view(),
-		m_pixmap(nullptr),
-		m_scene(new QGraphicsScene(this)),
-		m_item(nullptr)
+		m_pixmap(pixmap),
+		m_title(title)
 	{
-		m_view.installEventFilter(this);
-
-		QObject::connect(this, &ViewModel::pixmapChanged, this, [&]() { emit propertyChanged(QStringLiteral("pixmap")); });
-		QObject::connect(this, &ViewModel::sceneChanged, this, [&]() { emit propertyChanged(QStringLiteral("scene")); });
-		QObject::connect(this, &ViewModel::viewChanged, this, [&]() { emit propertyChanged(QStringLiteral("view")); });
-		QObject::connect(this, &ViewModel::itemChanged, this, [&]() { emit propertyChanged(QStringLiteral("item")); });
-	}
-
-	BitmapViewer::ViewModel::ViewModel(const QPixmap &pixmap, QObject* parent = nullptr) :
-		QObject(parent),
-		m_view(),
-		m_pixmap(std::make_unique<QPixmap>(pixmap)),
-		m_scene(new QGraphicsScene(this)),
-		m_item(m_scene->addPixmap(*m_pixmap))
-	{
-		this->installEventFilter(this);
-
-		QObject::connect(this, &ViewModel::pixmapChanged, this, [&]() { emit propertyChanged(QStringLiteral("pixmap")); });
-		QObject::connect(this, &ViewModel::sceneChanged, this, [&]() { emit propertyChanged(QStringLiteral("scene")); });
-		QObject::connect(this, &ViewModel::viewChanged, this, [&]() { emit propertyChanged(QStringLiteral("view")); });
-		QObject::connect(this, &ViewModel::itemChanged, this, [&]() { emit propertyChanged(QStringLiteral("item")); });
-	}
-
-	BitmapViewer::ViewModel::~ViewModel() noexcept = default;
-
-	void BitmapViewer::ViewModel::setPixmap(const QPixmap &pixmap)
-	{
-		if (m_pixmap) *m_pixmap = pixmap;
-		else m_pixmap.reset(new QPixmap(pixmap));
-		Q_ASSERT(m_pixmap);
-		if (m_item)	m_item->setPixmap(*m_pixmap);
-		else
-		{
-			Q_ASSERT(m_scene);
-			m_item = m_scene->addPixmap(*m_pixmap);
+		if (size) {
+			// Emit the requestResize signal to resize the QML window
+			emit requestResize(size->width(), size->height());
 		}
-		//emit propertyChanged(QStringLiteral("pixmap,item,scene"));
-		emit pixmapChanged(m_pixmap.get());
-		emit itemChanged(m_item);
-		emit sceneChanged(m_scene);
 	}
 
-	void BitmapViewer::setPixmap(const QPixmap &pixmap, const QString *title)
+	BitmapViewer::~BitmapViewer() = default;
+
+	void BitmapViewer::setPixmap(const QPixmap &pixmap)
 	{
-		if (requireResize())
+	if (m_pixmap.toImage() != pixmap.toImage())
 		{
-			resize(pixmap.size());
-			setWindowTitle(title ? *title : QObject::tr("Bitmap Viewer"));
-			setRequireResize(false);
+			m_pixmap = pixmap;
+			emit pixmapChanged(m_pixmap);
 		}
-
-		setPixmap(pixmap);
 	}
 
-	/*
-	BitmapViewer::BitmapViewer()
+	void BitmapViewer::setTitle(const QString &title) noexcept
 	{
-		QObject::connect(&bindingData(), &BitmapViewer::ViewModel::propertyChanged, this, &BitmapViewer::dataChanged);
-		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::viewSizeChanged, this, &BitmapViewer::sizeChanged);
+		if (m_title != title)
+		{
+			m_title = title;
+			emit titleChanged(m_title);
+		}
 	}
-		*/
-
-	BitmapViewer::BitmapViewer(QObject* parent) :
-		QObject(parent)
-	{
-		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::propertyChanged, this, &BitmapViewer::dataChanged);
-		QObject::connect(&m_bindingData, &BitmapViewer::ViewModel::viewSizeChanged, this, &BitmapViewer::sizeChanged);
-	}
-	
-	BitmapViewer::~BitmapViewer() noexcept = default;
 }

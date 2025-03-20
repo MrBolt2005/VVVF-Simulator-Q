@@ -1,8 +1,8 @@
 // Internal Includes
-#include <BufferedWaveIODevice.hpp>
-#include <GenerateCommon.hpp>
-#include <Struct.hpp>
-#include <YamlVvvfAnalyze.hpp>
+#include "../BufferedWaveIODevice.hpp"
+#include "../../GenerateCommon.hpp"
+#include "../../../Vvvf/Struct.hpp"
+#include "../../../Yaml/VvvfSound/YamlVvvfAnalyze.hpp"
 // STL Includes
 #include <functional>
 #include <vector>
@@ -20,7 +20,7 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 	class BufferedWaveFileWriter : public QObject
 	{
 		Q_OBJECT
-		using VvvfSimulator::Generation::Audio::BufferedWaveIODevice;
+		using BufferedWaveIODevice = VvvfSimulator::Generation::Audio::BufferedWaveIODevice;
 
 		BufferedWaveIODevice *m_Buffer;
 		QAudioSink *m_audioSink;
@@ -36,10 +36,13 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 	};
 	static void downSample(int newSamplingRate, const QDir& inputPath, const QDir& outputPath, bool deleteOld);
 
-	using GetSampleFunctional = std::function<std::vector<float>(VvvfValues, YamlVvvfSoundData)>;
+	using GetSampleFunctional = std::function<std::vector<float>(
+		NAMESPACE_VVVF::Struct::VvvfValues,
+		NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData
+	)>;
 
-	static void exportWavFile(GenerationBasicParameter genParam, GetSampleFunctional getSample, int samplingFreq, bool useRaw, const QDir& Path);
+	static void exportWavFile(GenerationCommon::GenerationBasicParameter genParam, GetSampleFunctional getSample, int samplingFreq, bool useRaw, const QDir& Path);
 
 //	public:
-	static void exportWavLine(GenerationBasicParameter genParam, int samplingFreq, bool useRaw, const QDir& Path);
+	static void exportWavLine(GenerationCommon::GenerationBasicParameter genParam, int samplingFreq, bool useRaw, const QDir& Path);
 }

@@ -71,3 +71,7 @@ target_link_libraries(VvvfSimulator PRIVATE reflectcpp::reflectcpp)
 # yaml-cpp
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(VvvfSimulator PRIVATE yaml-cpp::yaml-cpp)
+
+# iir(1)
+find_package(iir REQUIRED)
+target_link_libraries(VvvfSimulator PRIVATE iir::iir)
