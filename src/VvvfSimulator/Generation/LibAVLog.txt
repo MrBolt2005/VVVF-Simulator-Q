@@ -1,0 +1,43 @@
+#include <atomic>
+#include <cstdarg>
+#include <iostream>
+
+#include <QReadWriteLock>
+#include <QVector>
+
+class LibAVLog
+{
+    friend class LibAVLogHandle;
+    
+    static std::ostream *m_targetStream;
+    static QReadWriteLock m_targetLock, m_handleLock;
+    static std::atomic<bool> m_lastCallback;
+
+public:
+    static std::ostream *targetStream();
+    static void setTargetStream(std::ostream *targetStream);
+    static void libav_log_callback(void* ptr, int level, const char* fmt, va_list vl);
+    static bool lastCallback();
+};
+
+void LibAVLog::libav_log_callback(void* ptr, int level, const char* fmt, va_list vl)
+{
+    if (m_targetStream)
+    {
+        //const auto vsnSize = std::vsnprintf(nullptr, 0, fmt, vl);
+        QVector<char> log(std::vsnprintf(nullptr, 0, fmt, vl) + 1, Qt::Uninitialized);
+        const auto vsnAssert = std::vsnprintf(log.data(), log.size(), fmt, vl);
+        Q_ASSERT(vsnAssert + 1 == log.size());
+        QWriteLocker locker(&m_targetLock);
+
+        m_targetStream->write(log.constData(), log.size());
+        m_lastCallback = true;
+    }
+    else m_lastCallback = false;
+}
+
+class LibAVLogHandle
+{
+public:
+
+};

@@ -1,10 +1,13 @@
 #include "Audio.hpp"
 // Standard Library Includes
 #include <cmath>
+#include <cstring>
+#include <optional>
 // Package Includes
+#include <avcpp/audioresampler.h>
+#include <avcpp/frame.h>
 #include <QAudioDecoder>
 #include <QDateTime>
-#include <QDebug>
 #include <QUrl>
 
 namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
@@ -66,54 +69,76 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 		return out;
 	}
 
-	void downSample(int newSamplingRate, const QDir &inputPath, const QDir &outputPath, bool deleteOld)
+	std::expected<void, QString> reSample(int newSamplingRate, const QDir &inputPath, const QDir &outputPath, bool deleteOld)
 	{
 		QAudioDecoder decoder;
 		decoder.setSource(QUrl::fromLocalFile(inputPath.path()));
 
-		QAudioFormat format;
-		format.setSampleRate(newSamplingRate);
-		format.setChannelCount(1);
-		format.setSampleFormat(QAudioFormat::Float);
+		const av::SampleFormat format(getAVSampleFormat(decoder.audioFormat().sampleFormat()));
+		if (format == AV_SAMPLE_FMT_NONE)
+			return std::unexpected(QObject::tr("Formato de amostra desconhecido"));
 
-		QAudioSink sink(format, nullptr);
 		QFile outFile(outputPath.path());
 		if (!outFile.open(QIODevice::WriteOnly))
+			return std::unexpected(QObject::tr("Não foi possível abrir o arquivo de saída"));
+		
+		const auto inputSampleRate = decoder.audioFormat().sampleRate();
+		const auto inputChannels = decoder.audioFormat().channelCount();
+		try
 		{
-			qWarning() << QObject::tr("Não foi possível abrir o arquivo de saída");
-			return;
+			AVChannelLayout channelLayout;
+			av_channel_layout_default(&channelLayout, inputChannels);
+			av::AudioResampler resampler(
+				channelLayout.u.mask,
+				newSamplingRate,
+				format,
+				channelLayout.u.mask,
+				inputSampleRate,
+				format
+			);
+
+			QObject::connect(&decoder, &QAudioDecoder::bufferReady, [&]()
+			{
+				const QAudioBuffer buffer = decoder.read();
+				const auto inputSamples = buffer.sampleCount();
+				const auto inputDataBytes = buffer.constData<char>();
+				
+				// Push input data to the resampler
+				av::AudioSamples inputSamplesWrapper(format, inputSamples, channelLayout.u.mask, inputSampleRate);
+				std::memcpy(inputSamplesWrapper.data(), inputDataBytes, buffer.byteCount());
+				resampler.push(inputSamplesWrapper);
+
+				// Pop resampled data from the resampler
+				av::AudioSamples outputSamples;
+				while (resampler.pop(outputSamples, true)) // Get all available samples
+				{
+					outFile.write(reinterpret_cast<const char *>(outputSamples.data()), outputSamples.size());
+				}
+			});
+
+			std::optional<QString> error;
+			QObject::connect(&decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [&](QAudioDecoder::Error)
+			{
+				error = QObject::tr("Audio decoding error: %1").arg(decoder.errorString());
+			});
+
+			bool finished = false;
+			QObject::connect(&decoder, &QAudioDecoder::finished, [&]() {
+				outFile.close();
+				if (deleteOld) QFile::remove(inputPath.path());
+				finished = true;
+			});
+
+			decoder.start();
+			while (!finished);
+			return error ? std::unexpected(*error) : std::expected<void, QString>();
 		}
-
-		QObject::connect(&decoder, &QAudioDecoder::bufferReady, [&]() {
-			const QAudioBuffer buffer = decoder.read();
-			const QByteArray data = QByteArray::fromRawData(buffer.constData<char>(), buffer.byteCount());
-			// Perform downsampling here if necessary
-			if (QIODevice *device = sink.start()) {
-				device->write(data);
-			} else {
-				qWarning() << QObject::tr("Failed to start audio sink for writing");
-			}
-		});
-
-		QObject::connect(&decoder, QOverload<QAudioDecoder::Error>::of(&QAudioDecoder::error), [&](QAudioDecoder::Error error)
+		catch (const av::Exception &e)
 		{
-			qWarning() << QObject::tr("Erro ao decodificar o áudio: %1").arg(decoder.errorString());
-		});
-
-		QObject::connect(&decoder, &QAudioDecoder::finished, [&]()
-		{
-			sink.stop();
-			if (QIODevice *device = sink.start()) {
-				outFile.write(device->readAll());
-			} else {
-				qWarning() << QObject::tr("Failed to start audio sink for reading");
-			}
-			outFile.close();
-			if (deleteOld)
-				QFile::remove(inputPath.path());
-		});
-
-		decoder.start();
+			return std::unexpected(
+				QObject::tr("Audio resampling error, category (%1), code %2: %3").arg(e.code().category().name()).arg(e.code().value()).arg(e.what())
+			);
+		}
 	}
 	void exportWavFile(GenerationCommon::GenerationBasicParameter genParam, GetSampleFunctional getSample, int samplingFreq, bool useRaw, const QDir& Path)
 	{
@@ -131,20 +156,20 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 		bool loop = true;
 		while (loop)
 		{
-			control.time += dt;
+			control.sinTime += dt;
 			control.sawTime += dt;
 			std::vector<float> samples = getSample(control, genParam.soundData);
 
 			for (const float &sample : samples) writer.addSample(writer.floatToByteArray(sample * volumeFactor));
-			genParam.progress.current++;
-			bool flagContinue = YamlMasconControl.checkForFreqChange(control, genParam.masconData, 1.0 / samplingFreq);
+			genParam.progress.progress++;
+			bool flagContinue = genParam.masconData.checkForFreqChange(control, genParam.soundData, 1.0 / samplingFreq);
 			loop = !genParam.progress.cancel && flagContinue;
 		}
 
 		writer.close();
 		if (!useRaw)
 		{
-			downSample(downSampledFrequency, exportPath, Path, true);
+			reSample(downSampledFrequency, exportPath, Path, true);
 			genParam.progress.progress *= 1.05;
 		}
 
@@ -153,10 +178,12 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 
 	void exportWavLine(GenerationCommon::GenerationBasicParameter genParam, int samplingFreq, bool useRaw, const QDir &Path)
 	{
-		GetSampleFunctional sampleGen = [&](VvvfValues VVVF, YamlVvvfSoundData soundData) -> std::vector<float>
+		GetSampleFunctional sampleGen = [&](
+			NAMESPACE_VVVF::Struct::VvvfValues VVVF, NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData soundData
+		) -> std::vector<float>
 		{
-			PwmCalculateValues calculatedValues = YamlVvvfWave::calculateYaml(control, soundData);
-			WaveValues value = Calculate::calculatePhases(control, calculatedValues, 0);
+			NAMESPACE_VVVF::Struct::PwmCalculateValues calculatedValues = YamlVvvfWave::calculateYaml(control, soundData);
+			NAMESPACE_VVVF::Struct::WaveValues value = Calculate::calculatePhases(control, calculatedValues, 0);
 			double pwmValue = (2.0 * value.U - value.V - value.W) * (const double)(1.0 / 8.0);
 			return { static_cast<float>(pwmValue) };
 		}

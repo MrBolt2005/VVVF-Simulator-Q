@@ -132,6 +132,8 @@
     "stack": "cpp",
     "*.mm": "cpp",
     "dense": "cpp",
-    "core": "cpp"
+    "core": "cpp",
+    "qaudiodecoder": "cpp",
+    "qguiapplication": "cpp"
   }
 }

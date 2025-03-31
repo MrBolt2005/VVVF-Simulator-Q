@@ -102,4 +102,19 @@ namespace VvvfSimulator::Generation::Video::ControlInfo::GenerateControlCommon
 	{
 		return getAlignment(font.family());
 	}
+
+	// Function to draw text with auto-scaling font
+	inline void drawTextAutoScale(QPainter &painter, const QRect &rect, const QString &text, QFont font, Qt::AlignmentFlag flags = 0) {
+		while (QFontMetrics(font).horizontalAdvance(text) > rect.width() && font.pointSize() > 1)
+			font.setPointSize(font.pointSize() - 1);
+		painter.setFont(font);
+		painter.drawText(rect, flags, text);
+	}
+	
+	inline void drawTextAutoScale(QPainter &painter, const QRectF &rect, const QString &text, QFont font, Qt::AlignmentFlag flags = 0) {
+		while (QFontMetricsF(font).horizontalAdvance(text) > rect.width() && font.pointSizeF() > 1)
+			font.setPointSizeF(font.pointSizeF() - 1);
+		painter.setFont(font);
+		painter.drawText(rect, flags, text);
+	}
 }

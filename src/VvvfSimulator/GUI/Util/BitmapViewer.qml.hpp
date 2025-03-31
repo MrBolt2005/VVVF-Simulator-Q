@@ -34,35 +34,56 @@ namespace VvvfSimulator::GUI::Util
 		Q_OBJECT
 		Q_PROPERTY(QPixmap pixmap READ pixmap WRITE setPixmap NOTIFY pixmapChanged)
 		Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
+		Q_PROPERTY(int width READ width WRITE setWidth NOTIFY widthChanged)
+		Q_PROPERTY(int height READ height WRITE setHeight NOTIFY heightChanged)
+		Q_PROPERTY(bool isVisible READ isVisible WRITE setVisible NOTIFY isVisibleChanged)
 
 		QPixmap m_pixmap;
 		QString m_title;
+		int m_width, m_height;
+		bool m_isVisible = false;
 
 		static constexpr size_t m_sp = sizeof(m_pixmap);
 		static constexpr size_t m_st = sizeof(m_title);
+		static constexpr size_t m_ss = sizeof(m_size);
 		const size_t m_s = sizeof(*this);
 
 	public:
 		explicit BitmapViewer(
 			const QPixmap &pixmap = QPixmap(),
 			const QString &title = QObject::tr("Bitmap Viewer"),
-			const QSize *size = nullptr,
+			const QSize &size = QSize(450, 800),
+			bool show = false,
 			QObject *parent = nullptr
 		);
 		~BitmapViewer() override;
 
 		// Getters
 		QPixmap pixmap() const { return m_pixmap; }
-		QString title() const noexcept { return m_title; }
+		QString windowTitle() const noexcept { return m_title; }
+		constexpr bool isVisible() const noexcept { return m_isVisible; }
+		constexpr int width() const noexcept { return m_width; }
+		constexpr int height() const noexcept { return m_height; }
+		constexpr QSize size() const noexcept { return QSize(m_width, m_height); }
+	//	constexpr const QSize &sizeRef() const noexcept { return m_size; }
 
-		// Setters
-		void setPixmap(const QPixmap &pixmap);
-		void setTitle(const QString &title) noexcept;
-
-	signals:
+	signals: //void requestResize(int width, int height);
+		// Change Notification Signals	
+		void heightChanged(int arg);
+		void isVisibleChanged(bool arg);
 		void pixmapChanged(const QPixmap &pixmap);
-		void requestResize(int width, int height);
-		void titleChanged(const QString &title);
-		void windowResized(int width, int height);
+		void widthChanged(int arg);
+		void windowTitleChanged(const QString &title);
+
+	public slots:
+		// Setters
+		void close() { return setVisible(false); }
+		void setHeight(int height) noexcept;
+		void setPixmap(const QPixmap &pixmap);
+		void setSize(const QSize &size);
+		void setVisible(bool visible) noexcept;
+		void setWidth(int width) noexcept;
+		void setWindowTitle(const QString &title) noexcept;	
+		void show()  { return setVisible(true); }
 	};
 } // namespace VvvfSimulator::GUI::Util

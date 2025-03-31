@@ -84,12 +84,12 @@ namespace VvvfSimulator::Generation::Video::FFT
 			QApplication::activeWindow(),
 			[&]()
 			{
-				viewer.emplace();
+				viewer.emplace(QPixmap(), QObject::tr("Bitmap Viewer"), size, true);
 			},
 			Qt::QueuedConnection
 		);
 		while (!viewer.has_value());
-		viewer->show();
+		//viewer->show();
 
 		const YamlVvvfSoundData &vvvfData = parameter.soundData;
 		const YamlMasconDataCompiled &masconData = parameter.masconData;
@@ -158,7 +158,7 @@ namespace VvvfSimulator::Generation::Video::FFT
 			QApplication::activeWindow(),
 			[&]()
 			{
-				viewer.emplace();
+				viewer.emplace(QPixmap(), QObject::tr("Bitmap Viewer"), size, true);
 			},
 			Qt::QueuedConnection
 		);
@@ -180,9 +180,9 @@ namespace VvvfSimulator::Generation::Video::FFT
     // Extract the file name and append it to the viewer's title
     const QFileInfo fileInfo(fileName.absolutePath());
     const QString fileNameWithExtension = fileInfo.fileName();
-    viewer->setWindowTitle(viewer->bindingData().view().windowTitle() + " - " + fileNameWithExtension);
+    viewer->setWindowTitle(viewer->windowTitle() + " - " + fileNameWithExtension);
 
 		// Wait for window to close
-		while (viewer->bindingData().view().isVisible()) QApplication::processEvents();
+		while (viewer->isVisible()) QApplication::processEvents();
 	}
 }

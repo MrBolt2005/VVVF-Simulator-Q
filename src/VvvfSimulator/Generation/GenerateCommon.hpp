@@ -65,8 +65,8 @@ namespace VvvfSimulator::Generation::GenerationCommon
 		};
 		
 		YamlMasconDataCompiled masconData{};
-		YamlVvvfSoundData soundData{};
+		YamlVvvfSoundData soundData;
 		ProgressData progress{};
-	}
+	};
 
 }

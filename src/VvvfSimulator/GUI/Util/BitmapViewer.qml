@@ -3,10 +3,10 @@ import QtQuick.Controls 2.15
 import VvvfSimulator.GUI.Util 1.0
 
 ApplicationWindow {
-    visible: true
-    width: 800
-    height: 600
-    title: bitmapViewer.title
+    visible: bitmapViewer.isVisible // false
+    width: bitmapViewer.width // 450
+    height: bitmapViewer.height // 800
+    title: bitmapViewer.title // tr("Bitmap Viewer")
 
     signal windowResized(int width, int height) // Custom signal
 
@@ -16,16 +16,7 @@ ApplicationWindow {
     BitmapViewer {
         id: bitmapViewer
         onPixmapChanged: console.log("Pixmap updated")
-        onTitleChanged: console.log("Title updated")
-    }
-
-    // Listen for the requestResize signal
-    Connections {
-        target: bitmapViewer
-        onRequestResize: {
-            width = width_;
-            height = height_;
-        }
+        onWindowTitleChanged: console.log("Title updated")
     }
 
     ColumnLayout {

@@ -192,13 +192,35 @@ namespace NAMESPACE_VVVF::Struct
 
 	namespace PulseModeConfiguration
 	{
-		       QVector<double> getAvailablePulseCount(PulseTypeName pulseType, int level);
-		       QVector<PulseTypeName> getAvailablePulseType(int level);
-		       bool isPulseSquareAvailable (const YamlPulseMode& pulseMode, int level);
-		       bool isCompareWaveEditable  (const YamlPulseMode& pulseMode, int level);
-		       bool isPulseShiftedAvailable(const YamlPulseMode& pulseMode, int level);
-		       QVector<PulseAlternative> getPulseAlternatives(PulseTypeName pulseType, double pulseCount, int level);
-		inline QVector<PulseAlternative> getPulseAlternatives(const YamlPulseMode& pulseMode, int level)
+		          QVector<double> getAvailablePulseCount(PulseTypeName pulseType, int level);
+		          QVector<PulseTypeName> getAvailablePulseType(int level);
+		          bool isPulseSquareAvailable (const YamlPulseMode& pulseMode, int level);
+		constexpr bool isCompareWaveEditable  (const YamlPulseMode& pulseMode, int level) noexcept
+		{
+			if (level == 2)
+			{
+				if (pulseMode.Alternative == PulseAlternative::CP ||
+						pulseMode.Alternative == PulseAlternative::Shifted ||
+						pulseMode.PulseType   == PulseTypeName::ASYNC)
+					return true;
+				if (pulseMode.Alternative >  PulseAlternative::Default) return false;
+				if (pulseMode.PulseType   == PulseTypeName::SYNC) return pulseMode.PulseCount != 1;
+				return false;
+			}
+	
+			if (level == 3)
+			{
+				if (pulseMode.Alternative == PulseAlternative::Shifted ||
+					pulseMode.PulseType     == PulseTypeName::SYNC ||
+					pulseMode.PulseType     == PulseTypeName::ASYNC)
+				if (pulseMode.Alternative >  PulseAlternative::Default) return false;
+				return false;
+			}
+			return false;
+		}
+		          bool isPulseShiftedAvailable(const YamlPulseMode& pulseMode, int level);
+		          QVector<PulseAlternative> getPulseAlternatives(PulseTypeName pulseType, double pulseCount, int level);
+		inline    QVector<PulseAlternative> getPulseAlternatives(const YamlPulseMode& pulseMode, int level)
 		{
 			return getPulseAlternatives(pulseMode.PulseType, pulseMode.PulseCount, level);
 		}

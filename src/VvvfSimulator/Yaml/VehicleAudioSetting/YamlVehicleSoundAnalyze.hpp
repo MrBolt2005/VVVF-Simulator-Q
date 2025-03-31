@@ -3,8 +3,9 @@
 // Standard Library
 #include <vector>
 // Packages
-#include "iowahills/iir.h"
+//#include "iowahills/iir.h"
 // Internal
+#include "../DSP/BiquadFilter.hpp"
 #include "../../Bits/CxxConfig.h"
 #include "../../Generation/Motor/GenerateMotorCore.hpp"
 
@@ -40,11 +41,11 @@ namespace VvvfSimulator::Yaml::VehicleAudioSetting::YamlVehicleSoundAnalyze
 		{
 			enum class FilterType
 			{
-				LowPassFilter  = iirLPF,
-				HighPassFilter = iirHPF,
-				BandPassFilter = iirBPF,
-				NotchFilter    = iirNOTCH,
-				AllPassFilter  = iirALLPASS,
+				LowPassFilter,  //= iirLPF,
+				HighPassFilter, //= iirHPF,
+				BandPassFilter, //= iirBPF,
+				NotchFilter,    //= iirNOTCH,
+				AllPassFilter,  //= iirALLPASS,
 				PeakingEQ   // = 5
 			};
 
@@ -73,8 +74,8 @@ namespace VvvfSimulator::Yaml::VehicleAudioSetting::YamlVehicleSoundAnalyze
 		double TotalVolumeDb = -2.5;
 		bool UseFilters = true, UseConvolutionFilter = true;
 
-		using FilterArray = std::vector<TIIRCoeff>;
-		FilterArray getFilters(double sampleFreq);
+		using FilterArray = std::vector<DSP::BiquadFilter<float>>;
+		FilterArray getFilters(float sampleFreq);
 
 		std::vector<HarmonicData> calculatedGearHarmonics(double gear1, double gear2);
 		void setCalculatedGearHarmonics(double gear1, double gear2)

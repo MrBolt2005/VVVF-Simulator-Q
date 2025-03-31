@@ -24,20 +24,29 @@ namespace VvvfSimulator::GUI::Util
 	BitmapViewer::BitmapViewer(
 		const QPixmap &pixmap,
 		const QString &title,
-		const QSize *size = nullptr,
+		const QSize &size,
+		bool show,
 		QObject *parent
 	) :
 		QObject(parent),
 		m_pixmap(pixmap),
-		m_title(title)
+		m_title(title),
+		m_width(size.width()),
+		m_height(size.height()),
+		m_isVisible(show)
 	{
-		if (size) {
-			// Emit the requestResize signal to resize the QML window
-			emit requestResize(size->width(), size->height());
-		}
 	}
 
 	BitmapViewer::~BitmapViewer() = default;
+
+	void BitmapViewer::setHeight(int height) noexcept
+	{
+		if (m_size.height() != height)
+		{
+			m_height = height;
+			emit heightChanged(m_height);
+		}
+	}
 
 	void BitmapViewer::setPixmap(const QPixmap &pixmap)
 	{
@@ -48,12 +57,36 @@ namespace VvvfSimulator::GUI::Util
 		}
 	}
 
-	void BitmapViewer::setTitle(const QString &title) noexcept
+	void BitmapViewer::setSize(const QSize &size)
+	{
+		setWidth(size.width());
+		setHeight(size.height());
+	}
+
+	void BitmapViewer::setVisible(bool visible) noexcept
+	{
+		if (m_isVisible != visible)
+		{
+			m_isVisible = visible;
+			emit isVisibleChanged(m_isVisible);
+		}
+	}
+
+	void BitmapViewer::setWidth(int width) noexcept
+	{
+		if (m_size.width() != width)
+		{
+			m_width = width;
+			emit widthChanged(m_width);
+		}
+	}
+	
+	void BitmapViewer::setWindowTitle(const QString &title) noexcept
 	{
 		if (m_title != title)
 		{
 			m_title = title;
-			emit titleChanged(m_title);
+			emit windowTitleChanged(m_title);
 		}
 	}
 }

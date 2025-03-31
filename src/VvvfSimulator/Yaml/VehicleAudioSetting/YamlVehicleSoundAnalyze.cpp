@@ -6,55 +6,50 @@
 
 namespace VvvfSimulator::Yaml::VehicleAudioSetting::YamlVehicleSoundAnalyze
 {
-	YamlVehicleSoundData::FilterArray YamlVehicleSoundData::getFilters(double sampleFreq)
+	YamlVehicleSoundData::FilterArray YamlVehicleSoundData::getFilters(float sampleFreq)
 	{
 		FilterArray nFilters;
 
 		for (const auto& soundFilter : Filters)
 		{
-			TIIRFilterParams params = {};
-			params.ProtoType = BUTTERWORTH; // Example: Butterworth prototype
-			params.NumPoles = 2;            // 2nd-order filter
-			params.Ripple = 0.0;            // Not used for Butterworth
-			params.StopBanddB = 0.0;        // Not used for Butterworth
-			params.Gamma = 0.0;             // Not used for Butterworth
-
 			// Set filter-specific parameters
 			switch (soundFilter.Type)
 			{
 			case SoundFilter::FilterType::LowPassFilter:
-				params.IIRPassType = iirLPF;
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculateLPFCoefficients(soundFilter.Frequency, soundFilter.Q, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
 				break;
-			
+			}
 			case SoundFilter::FilterType::HighPassFilter:
-				params.IIRPassType = iirHPF;
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculateHPFCoefficients(soundFilter.Frequency, soundFilter.Q, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
 				break;
-			
+			}
 			case SoundFilter::FilterType::BandPassFilter:
-				params.IIRPassType = iirBPF;
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
-				params.BW = soundFilter.Frequency / soundFilter.Q;          // Bandwidth
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculateBPFCoefficients(soundFilter.Frequency, soundFilter.Q, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
 				break;
-
+			}
 			case SoundFilter::FilterType::NotchFilter:
-				params.IIRPassType = iirNOTCH;
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
-				params.BW = soundFilter.Frequency / soundFilter.Q;          // Bandwidth
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculateNotchCoefficients(soundFilter.Frequency, soundFilter.Q, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
 				break;
-
+			}
 			case SoundFilter::FilterType::AllPassFilter:
-				params.IIRPassType = iirALLPASS;
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculateAllPassCoefficients(soundFilter.Frequency, soundFilter.Q, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
 				break;
-
+			}
 			default: // case SoundFilter::FilterType::PeakingEQ:
-				params.IIRPassType = iirBPF; // Band-Pass as a base for Peaking EQ
-				params.OmegaC = soundFilter.Frequency / (sampleFreq * 0.5); // Normalize frequency
-				params.BW = soundFilter.Frequency / soundFilter.Q;          // Bandwidth
-				params.dBGain = soundFilter.Gain;                           // Gain in dB
-				//break;
+			{
+				auto a_b = DSP::BiquadFilter<float>::calculatePeakingEQCoefficients(soundFilter.Frequency, soundFilter.Q, soundFilter.Gain, sampleFreq);
+				nFilters.emplace_back(std::move(a_b.first), std::move(a_b.second));
+			}
 			}
 
 			// Calculate the filter coefficients
@@ -62,7 +57,6 @@ namespace VvvfSimulator::Yaml::VehicleAudioSetting::YamlVehicleSoundAnalyze
 			TIIRCoeff coeff = CalcIIRFilterCoeff(params);
 			nFilters.push_back(coeff);
 			*/
-			nFilters.emplace_back(CalcIIRFilterCoeff(params));
     }
 
 		return nFilters;
