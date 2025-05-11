@@ -1,26 +1,13 @@
-/*
-   Copyright © 2025 VvvfGeeks, VVVF Systems
-   
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+#include "QtVideoWriter.hpp"
 
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright © 2025 VvvfGeeks, VVVF Systems
+// SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later OR GPL-3.0-or-later
 
 // QtVideoWriter.cpp
 // Version 1.9.1.1
 
 // Standard Library Includes
 //#include <ctime>
-// Internal Includes
-#include "QtVideoWriter.hpp" // Declaration
 // Package Includes
 #include <avcpp/av.h> // Has already been included by the header above, but don't rely on indirect includes...
 #include <avcpp/averror.h>
@@ -30,20 +17,22 @@
 namespace VvvfSimulator::Generation
 {
 	QtVideoWriter::QtVideoWriter(
-		const QDir& filename,
+		const std::filesystem::path& filename,
 		const int width,
 		const int height,
-		const double fps,
+		const av::Rational &timeBase,
 		const AVCodecID codecID,
 		const av::PixelFormat pixelFormat,
+		const av::Dictionary &options,
 		bool openOnCreation,
 		QObject* parent
 	) :
 		QObject(parent),
 		m_filename(filename),
+		m_options(options),
 		m_width(width),
 		m_height(height),
-		m_FPS(fps),
+		m_timeBase(timeBase),
 		m_formatContext(std::nullopt),
 		m_codecContext(std::nullopt),
 		m_stream(std::nullopt),
@@ -61,7 +50,7 @@ namespace VvvfSimulator::Generation
 		close();
 	}
 
-	bool QtVideoWriter::setFilename(const QDir &filename)
+	bool QtVideoWriter::setFilename(const std::filesystem::path &filename)
 	{
 		if (m_isOpen)
 		{
@@ -103,16 +92,16 @@ namespace VvvfSimulator::Generation
 		}
 	}
 
-	bool QtVideoWriter::setFPS(double fps)
+	bool QtVideoWriter::setTimeBase(const av::Rational &timeBase)
 	{
 		if (m_isOpen)
 		{
-			qWarning() << QObject::tr("Cannot change FPS while the video writer is open");
+			qWarning() << QObject::tr("Cannot change time base/FPS while the video writer is open");
 			return false;
 		}
 		else
 		{
-			m_FPS = fps;
+			m_timeBase = timeBase;
 			return true;
 		}
 	}
@@ -150,10 +139,9 @@ namespace VvvfSimulator::Generation
 	void QtVideoWriter::open()
 	{
     if (m_isOpen) return;
-		av::init();
 
     m_formatContext.emplace();
-    m_formatContext->openOutput(m_filename.path().toStdString());
+    m_formatContext->openOutput(m_filename.string(), m_options);
 		/*
 		if (ec)
 		{
@@ -167,14 +155,14 @@ namespace VvvfSimulator::Generation
     m_codecContext->setWidth(m_width);
 		m_codecContext->setHeight(m_height);
 		m_codecContext->setPixelFormat(m_pixelFormat);
-		m_codecContext->setTimeBase({1, m_FPS});
+		m_codecContext->setTimeBase(m_timeBase);
     m_codecContext->open();
 
-    m_stream.emplace(std::move(m_formatContext->addStream(m_codecContext->codec())));
+    m_stream.emplace(std::move(m_formatContext->addStream(reinterpret_cast<const av::VideoEncoderContext &>(*m_codecContext))));
     m_formatContext->writeHeader();
 
     //m_frame = av::VideoFrame(m_codecContext->pixelFormat(), m_codecContext->width(), m_codecContext->height());
-    m_packet.emplace();
+    //m_packet.emplace();
 
     m_pts = 0;
 		m_isOpen = true;
@@ -236,5 +224,21 @@ namespace VvvfSimulator::Generation
 			m_formatContext->writeTrailer();
     }
 		m_isOpen = false;
+		m_packet.reset();
+		m_codecContext.reset();
+		m_formatContext.reset();
+		m_stream.reset();
+	}
+
+	void QtVideoWriter::addEmptyFrames(size_t numFrames, bool darkMode)
+	{
+		QImage emptyImage(width(), height(), QImage::Format_ARGB32);
+		emptyImage.fill(darkMode ? QColorConstants::Black : QColorConstants::White);
+		for (auto i = numFrames; i-- > 0;) writeFrame(emptyImage);
+	}
+	
+	void QtVideoWriter::addImageFrames(const QImage &image, size_t numFrames)
+	{
+		for (auto i = numFrames; i-- > 0;) writeFrame(image);
 	}
 }

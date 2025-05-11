@@ -22,11 +22,11 @@ namespace NAMESPACE_VVVF::Struct
 				*(it++) = QObject::tr("Async - %1").arg(QString::number(carrier.baseFrequency));
 
 				if (carrier.range != 0.0)
-					*(it++) = QObject::tr("Random ± %1").arg(QString::number(carrier.range));
+					*(it++) = QObject::tr("Random ± %1 ÷ 2").arg(QString::number(carrier.range));
 
 				const auto hasBipolar = videoPulseData.find(PulseDataKey::Bipolar);
 				if (hasBipolar != videoPulseData.end())
-					*it = QObject::tr("Bipolar - %1").arg(QString::number(hasBipolar->second));
+					*it = QObject::tr("Bipolar - %1").arg(QString::number(hasBipolar.value()));
 				return names;
 			}
 			break;
@@ -36,7 +36,7 @@ namespace NAMESPACE_VVVF::Struct
 				const auto hasBipolar = videoPulseData.find(PulseDataKey::Bipolar);
 				return hasBipolar == videoPulseData.end() ?
 					QStringList(modeName) :
-					QStringList{modeName, QObject::tr("Bipolar - %1").arg(QString::number(hasBipolar->second))};
+					QStringList{modeName, QObject::tr("Bipolar - %1").arg(QString::number(hasBipolar.value()))};
 			}
 			break;
 		case PulseTypeName::CHM:
@@ -137,7 +137,7 @@ namespace NAMESPACE_VVVF::Struct
 			{
 				switch ((int64_t)pulseCount)
 				{
-					case 3:  return AlternativesDefaultToX(2, nullptr):
+					case 3:  return AlternativesDefaultToX(2, nullptr);
 					case 5:  return AlternativesDefaultToX(4, nullptr);
 					case 7:  return AlternativesDefaultToX(6, nullptr);
 					case 9:  return AlternativesDefaultToX(7, nullptr);

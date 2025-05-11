@@ -1,34 +1,19 @@
 #pragma once
 
-/*
-   Copyright © 2025 VvvfGeeks, VVVF Systems
-   
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
+// Copyright © 2025 VvvfGeeks, VVVF Systems
+// SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later OR GPL-3.0-or-later
 
 // QtVideoWriter.hpp
 // Version 1.9.1.1
 
-// Standard Library Includes
+// Standard Library
 #include <cinttypes>
-//#include <expected>
+#include <filesystem>
 #include <memory>
 #include <optional>
-//#include <ostream>
 #include <string>
-// Internal Includes
-//#include "../Exception.hpp"
-// Package Includes
+#include <variant>
+// Packages
 #include <avcpp/av.h>
 #include <avcpp/codec.h>
 #include <avcpp/codeccontext.h>
@@ -37,7 +22,6 @@
 #include <avcpp/frame.h>
 #include <avcpp/packet.h>
 //#include <avcpp/util.h>
-#include <QDir>
 #include <QObject>
 #include <QImage>
 
@@ -50,9 +34,10 @@ namespace VvvfSimulator::Generation
 
 		// Report: Trying to reorder members according to creation order
 
-		QDir m_filename; // size : 8 bytes
+		std::filesystem::path m_filename; // size : 8 bytes
+		av::Dictionary m_options;
 		int m_width, m_height; // size : 2*4 bytes
-		double m_FPS; // size : 8 bytes
+		av::Rational m_timeBase;
 		AVCodecID m_codecID; // size : 4 bytes
 		av::PixelFormat m_pixelFormat; // size : 4 bytes
 		std::optional<av::FormatContext> m_formatContext;
@@ -68,25 +53,32 @@ namespace VvvfSimulator::Generation
 		static constexpr QImage::Format bestCompatiblePremultipliedImageFormat = QImage::Format_RGBA32FPx4_Premultiplied;
 		//size_t m_s = sizeof(*this);
 	
-		QtVideoWriter(
-			const QDir& filename,
+		explicit QtVideoWriter(
+			const std::filesystem::path& filename,
 			const int width,
 			const int height,
-			const double fps,
+			const av::Rational &timeBase,
 			const AVCodecID codecID,
 			const av::PixelFormat pixelFormat = av::PixelFormat(bestCompatiblePixelFormat),
+			const av::Dictionary &options = av::Dictionary(),
 			bool openOnCreation = false,
 			QObject* parent = nullptr);
 		~QtVideoWriter() override;
 
-		constexpr const QDir& filename() const { return m_filename; }
+		std::filesystem::path filename() const { return m_filename; }
+		constexpr const std::filesystem::path& filenameRef() const noexcept { return m_filename; }
 		constexpr int width() const noexcept { return m_width; }
 		constexpr int height() const noexcept { return m_height; }
-		constexpr double FPS() const noexcept { return m_FPS; }
+		av::Rational timeBase() const noexcept { return m_timeBase; }
+		constexpr const av::Rational& timeBaseRef() const noexcept { return m_timeBase; }
 		constexpr av::PixelFormat pixelFormat() const noexcept { return m_pixelFormat; }
 		constexpr int64_t pts() const noexcept { return m_pts; }
 		constexpr AVCodecID codecID() const noexcept { return m_codecID; }
 		constexpr bool isOpen() const noexcept { return m_isOpen; }
+
+		double FPS() const noexcept { return m_timeBase.getDouble(); }
+
+		static av::Rational FPSToRational(const double FPS) noexcept { return av::Rational(1.0 / FPS); }
 
 		constexpr static AVPixelFormat getPixelFormat(QImage::Format format) noexcept
 		{
@@ -223,10 +215,10 @@ namespace VvvfSimulator::Generation
 
 	// Slots for setting various properties of the video writer
 	public slots:
-		bool setFilename(const QDir& filename);
+		bool setFilename(const std::filesystem::path& filename);
 		bool setWidth(int width);
 		bool setHeight(int height);
-		bool setFPS(double fps);
+		bool setTimeBase(const av::Rational &timeBase);
 		bool setPixelFormat(av::PixelFormat pixelFormat);
 		bool setCodecID(AVCodecID codecID);
 
@@ -237,5 +229,8 @@ namespace VvvfSimulator::Generation
 		// Closes the video writer and releases any resources.
 		// Throws: av::Exception if there is an error during closing.
 		void close();
+
+		void addEmptyFrames(size_t numFrames, bool darkMode = false);
+		void addImageFrames(const QImage& image, size_t numFrames);
 	};
 }

@@ -25,8 +25,8 @@
 
 namespace VvvfSimulator::GUI::Mascon
 {
-	LoadMidi::LoadMidi(QObject *parent)
-		: QObject(parent)
+	LoadMidi::LoadMidi(const QVariantMap *const params, QObject *parent)
+		: WindowPropertyBase(params, parent)
 	{
 	}
 

@@ -31,6 +31,7 @@
 #include <optional>
 #include <stdexcept>
 // Package Includes
+#include <QMap>
 #include <QString>
 #include <QVector>
 
@@ -161,7 +162,7 @@ namespace NAMESPACE_VVVF::Struct
 
 		// Values for Video Generation.
 		YamlPulseMode videoPulseMode;
-		std::map<PulseDataKey, double> videoPulseData{};
+		QMap<PulseDataKey, double> videoPulseData{};
 		double videoSineAmplitude{};
 		CarrierFreq videoCarrierFrequency;
 		double videoSineFrequency{};
@@ -181,7 +182,7 @@ namespace NAMESPACE_VVVF::Struct
 		YamlPulseMode pulseMode;
 		CarrierFreq carrier = { 100.0, 0.0, 0.0005 };
 
-		std::map<PulseDataKey, double> pulseData{};
+		QMap<PulseDataKey, double> pulseData{};
 		int_fast8_t level{};
 		bool none{};
 

@@ -22,18 +22,23 @@
 #include <optional>
 #include <string>
 // Package Includes
+#include <avcpp/av.h>
+
+#include <boost/nowide/iostream.hpp>
+
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QGuiApplication>
 #include <QLatin1StringView>
+#include <QMessageBox>
 #include <QObject>
-#include <QPointer>
 #include <QQmlApplicationEngine>
 #include <QSettings>
+#include <QSharedMemory>
 #include <QString>
 #include <QtSystemDetection>
 // Internal
-#include "Exception.hpp"
+#include "VvvfSimulator/Exception.hpp"
 
 std::optional<std::filesystem::path> logPath = std::nullopt;
 QtMessageHandler originalHandler = nullptr;
@@ -44,7 +49,7 @@ static void VvvfSimulator__logToFile(QtMsgType type, const QMessageLogContext &c
 	if (logPath.has_value())
 	{
 		const auto log = qFormatLogMessage(type, context, msg);
-		static FILE *logFile = std::fopen(logPath->string().c_str(), "a, ccs=UTF-8");
+		static std::FILE *logFile = std::fopen(logPath->string().c_str(), "a, ccs=UTF-8");
 		if (logFile)
 		{
 			std::fprintf(logFile, "%s\n", qUtf8Printable(msg));
@@ -97,6 +102,8 @@ int main(int argc, char *argv[])
 		qDebug() << QObject::tr("Succesfully defined new C locale: ") << loc << '\n';
 		*/
 
+	av::init();
+	
 	// Set up standard output to UTF-8
 	const auto originalCoutLocale = std::cout.getloc();
 	auto newLocale = trySwitchLocaleToUnicode(originalCoutLocale);
@@ -111,9 +118,10 @@ int main(int argc, char *argv[])
 	// Start up the Qt application
 	QGuiApplication app(argc, argv);
 	app.setOrganizationName(QStringLiteral("VVVF Systems"));
-  app.setOrganizationDomain(QStringLiteral("vvvfgeeks.org"));
+	app.setOrganizationDomain(QStringLiteral("vvvfgeeks.org"));
 	app.setApplicationName(QStringLiteral("VVVF-Simulator-Q"));
 	app.setApplicationDisplayName(QObject::tr("VVVF-Simulator"));
+	app.setApplicationVersion(QStringLiteral("1.9.1.1"));
 
 	//
 	// Parse needed command line arguments
@@ -121,20 +129,20 @@ int main(int argc, char *argv[])
 	QCommandLineParser parser;
 	parser.process(app);
 
-	QPointer<QSettings> appSettings;
+	std::optional<QSettings> appSettings;
 	// Get settings from default source or from file
 	if (parser.isSet(QStringLiteral("settings")))
 	{
 		const auto settingsPath = parser.value(QStringLiteral("settings"));
 		#if    defined(Q_OS_APPLE)
-		appSettings = new QSettings(settingsPath, settingsPath.endsWith(QLatin1StringView(".ini"), Qt::CaseInsensitive) ? QSettings::IniFormat : QSettings::NativeFormat);
+		appSettings.emplace(settingsPath, settingsPath.endsWith(QLatin1StringView(".ini"), Qt::CaseInsensitive) ? QSettings::IniFormat : QSettings::NativeFormat);
 		#elif  defined(Q_OS_WIN)
-		appSettings = new QSettings(settingsPath, settingsPath.startsWith(QLatin1StringView("HKEY")) ? QSettings::NativeFormat : QSettings::IniFormat);
+		appSettings.emplace(settingsPath, settingsPath.startsWith(QLatin1StringView("HKEY")) ? QSettings::NativeFormat : QSettings::IniFormat);
 		#else  // Linux et al.
-		appSettings = new QSettings(settingsPath, QSettings::NativeFormat); // Equivalent to QSettings::IniFormat!
+		appSettings.emplace(settingsPath, QSettings::NativeFormat); // Equivalent to QSettings::IniFormat!
 		#endif
 	}
-	else appSettings = new QSettings(QSettings::UserScope, app.organizationName(), app.applicationName());
+	else appSettings.emplace(QSettings::UserScope, app.organizationName(), app.applicationName());
 	
 	// Change settings
 	
@@ -144,14 +152,14 @@ int main(int argc, char *argv[])
 	if (parser.isSet(QStringLiteral("help")))
 	{
 		const auto out = QObject::tr(helpText).toUtf8();
-		std::cout.write(out.constData(), out.size() + 1);
+		boost::nowide::cout.write(out.constData(), out.size() + 1);
 		wasCLIOutput = true;
 	}
 	// Show About text
 	if (parser.isSet(QStringLiteral("about")))
 	{
 		const auto out = QObject::tr(aboutText).toUtf8();
-		std::cout.write(out.constData(), out.size() + 1);
+		boost::nowide::cout.write(out.constData(), out.size() + 1);
 		wasCLIOutput = true;
 	}
 
@@ -168,6 +176,25 @@ int main(int argc, char *argv[])
 	}
 
 	if (exitAfterCLI && wasCLIOutput) return 1;
+
+	// Check if an instance is already running
+	QSharedMemory checkInstances;
+	checkInstances.setKey(QStringLiteral("%1_v%2_checkInstances").arg(app.applicationName()).arg(app.applicationVersion()));
+
+	if (!checkInstances.create(1) && !parser.isSet(QStringLiteral("ignore-instance-check"))) {
+		// Another instance is already running
+		QMessageBox msgBox;
+		msgBox.setText(QObject::tr("Another instance of this application is already running."));
+		msgBox.setInformativeText(QObject::tr("Do you want to continue launching it?"));
+		msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		msgBox.setDefaultButton(QMessageBox::Yes);
+
+		const auto check = msgBox.exec();
+		if (check == QMessageBox::No) {
+				// User chose not to launch another instance
+				return check;
+		}
+	}
 
 	// Set up the QML engine
 	QQmlApplicationEngine engine(&app);

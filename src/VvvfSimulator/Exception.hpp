@@ -65,6 +65,6 @@ namespace VvvfSimulator::Exception
 		{
 			return QMessageLogContext(m_ctx.file, m_ctx.line, m_ctx.function, m_ctx.category);
 		}
-		CONSTEXPR_VIRTUAL QVariantMap variantMap() const noexcept { return m_variantMap; }
+		virtual QVariantMap variantMap() const noexcept { return m_variantMap; }
   };
 }

@@ -19,6 +19,15 @@
 // CxxConfig.h
 // Version 1.9.1.1
 
+// Packages
+#include <boost/preprocessor/if.hpp>
+#include <boost/preprocessor/config/limits.hpp>
+
+// Helper macros to detect if a macro is defined
+#define DETAIL_IS_DEFINED_PROBE_1 ~, 1
+#define DETAIL_IS_DEFINED_PROBE_0 ~, 0
+#define IS_DEFINED(x) BOOST_PP_CAT(DETAIL_IS_DEFINED_PROBE_, x)
+
 #if __cplusplus >= 202302L
 	#define CXX23_CONSTEXPR constexpr
 	#define CXX23_NOEXCEPT  noexcept
@@ -50,4 +59,32 @@
 	#define CXX17_NOEXCEPT
 	#define CXX17_INLINE
 #endif
+
+//
+// Version-specific language features
+//
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201907L
+#define FEATURE_CONSTEXPR_VIRTUAL __cpp_constexpr
+#endif // defined(__cpp_constexpr) && __cpp_constexpr >= 201907L
+
+#ifdef __cpp_lib_constexpr_string
+#define FEATURE_CONSTEXPR_STD__CHAR_TRAITS __cpp_lib_constexpr_string
+#endif // __cpp_lib_constexpr_string
+
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+#define FEATURE_CONSTEXPR_STD__STRING __cpp_lib_constexpr_string
+#endif // defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L
+
+//
+
+#define CONSTEXPR_IF(EXPR) _CONSTEXPR_IF_IMPL(EXPR)
+
+#define _CONSTEXPR_IF_IMPL(EXPR) \
+    _CONSTEXPR_IF_##EXPR
+
+#define _CONSTEXPR_IF_0
+#define _CONSTEXPR_IF_1 constexpr
+
+#define CONSTEXPR_VIRTUAL CONSTEXPR_IFDEF(FEATURE_CONSTEXPR_VIRTUAL) virtual
+
 // Compare this snippet from src/VvvfSimulator/Bits/CxxConfig.h:

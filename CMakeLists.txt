@@ -1,17 +1,21 @@
 cmake_minimum_required(VERSION 3.16)
 
+# To generate [compile_commands.json], for MSVS
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Set the project name and version
 project(VvvfSimulator VERSION 1.0 LANGUAGES CXX)
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Enable AUTOMOC
 set(CMAKE_AUTOMOC ON)
 
 # Set CMAKE_PREFIX_PATH to include the Qt6 installation directory
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Qt/6.8.1/msvc2022_64" "C:/dev/vcpkg/installed/x64-windows")
+# set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "D:/Qt/6.8.1/msvc2022_64" "C:/dev/vcpkg/installed/x64-windows")
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "C:/dev/vcpkg/installed/x64-windows")
 
 # Set the CMAKE_TOOLCHAIN_FILE to use vcpkg
 set(CMAKE_TOOLCHAIN_FILE "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake")
@@ -32,6 +36,13 @@ add_executable(VvvfSimulator
     src/main.cpp
     src/VvvfSimulator/GUI/MainWindow.qml
 )
+
+# Add the CMAKE_PREFIX_PATH directories to the target
+foreach(PREFIX_PATH ${CMAKE_PREFIX_PATH})
+    if(EXISTS ${PREFIX_PATH}/include)
+        target_include_directories(VvvfSimulator PRIVATE ${PREFIX_PATH}/include)
+    endif()
+endforeach()
 
 # Link the Qt libraries
 target_link_libraries(VvvfSimulator PRIVATE Qt6::Core Qt6::Quick Qt6::QuickControls2)

@@ -23,10 +23,12 @@
 #include <QObject>
 #include <QString>
 #include <QDir>
+// Internal
+#include "../WindowPropertyBase.hpp"
 
 namespace VvvfSimulator::GUI::Mascon
 {
-	class LoadMidi : public QObject
+	class LoadMidi : public WindowPropertyBase
 	{
 		Q_OBJECT
 		Q_PROPERTY(int track READ track WRITE setTrack NOTIFY trackChanged)
@@ -63,7 +65,7 @@ namespace VvvfSimulator::GUI::Mascon
 				track(Track),
 				priority(Priority),
 				division(Division),
-				path(Path)
+				path(std::move(Path))
 			{}
 		};
 
@@ -71,13 +73,13 @@ namespace VvvfSimulator::GUI::Mascon
 		MidiLoadData m_loadConfiguration;
 				
 	public:
-		explicit LoadMidi(QObject *parent = nullptr);
+		explicit LoadMidi(const QVariantMap *const params = nullptr, QObject *parent = nullptr);
 
 		// Getters
 		constexpr int          track()    const noexcept { return m_loadConfiguration.track; }
 		constexpr int          priority() const noexcept { return m_loadConfiguration.priority; }
 		constexpr double       division() const noexcept { return m_loadConfiguration.division; }
-							QString      path()     const noexcept { return m_loadConfiguration.path; }
+		          QString      path()     const noexcept { return m_loadConfiguration.path; }
 		          MidiLoadData midiData() const noexcept { return m_loadConfiguration; }
 
 		// Setters

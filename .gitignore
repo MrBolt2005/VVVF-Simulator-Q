@@ -1,2 +1,6 @@
 # Ignore build directory
 build/
+
+.vs/
+CMakeSettings.json
+.vscode/

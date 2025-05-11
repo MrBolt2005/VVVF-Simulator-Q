@@ -19,6 +19,8 @@
 // GenerateCommon.hpp
 // Version 1.9.1.1
 
+// Packages
+#include <avcpp/codec.h>
 // Internal Includes
 #include "QtVideoWriter.hpp"
 #include "../Yaml/MasconControl/YamlMasconAnalyze.hpp"
@@ -29,26 +31,7 @@ namespace VvvfSimulator::Generation::GenerationCommon
 	using NAMESPACE_YAMLMASCONCONTROL::YamlMasconAnalyze::YamlMasconDataCompiled;
 	using NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData;
 
-	class GenerationVideoWriter : public QtVideoWriter
-	{
-		Q_OBJECT
-
-		public:
-		GenerationVideoWriter(
-			const QDir& filename,
-			const int width,
-			const int height,
-			const double fps,
-			const AVCodecID codecID,
-			const av::PixelFormat pixelFormat = av::PixelFormat(bestCompatiblePixelFormat),
-			bool openOnCreation = false,
-			QObject* parent = nullptr) :
-		QtVideoWriter(filename, width, height, fps, codecID, pixelFormat, openOnCreation, parent) {}
-
-	public slots:
-		void addEmptyFrames(size_t numFrames, bool darkMode = false);
-		void addImageFrames(const QImage& image, size_t numFrames);
-	};
+	typedef QtVideoWriter GenerationVideoWriter;
 
 	struct GenerationBasicParameter
 	{
@@ -69,4 +52,60 @@ namespace VvvfSimulator::Generation::GenerationCommon
 		ProgressData progress{};
 	};
 
+	class LibAVCodecText
+	{
+		Q_GADGET
+
+		class PixelFormat
+		{
+			Q_GADGET
+			Q_PROPERTY(int pixFmtNum MEMBER pixFmtNum)
+			Q_PROPERTY(QString name MEMBER name)
+
+		public:
+			union { AVPixelFormat pixFmt; int pixFmtNum; };
+			QString name;
+		};
+
+		class SampleFormat
+		{
+			Q_GADGET
+			Q_PROPERTY(int sampleFmtNum MEMBER sampleFmtNum)
+			Q_PROPERTY(QString name MEMBER name)
+
+		public:
+			union { AVSampleFormat sampleFmt; int sampleFmtNum; };
+			QString name;
+		};
+
+		Q_PROPERTY(int idNum MEMBER idNum)
+		Q_PROPERTY(int typeNum MEMBER typeNum)
+		Q_PROPERTY(QString name MEMBER name)
+		Q_PROPERTY(QString longName MEMBER longName)
+		Q_PROPERTY(int isDecoder MEMBER isDecoder)
+		Q_PROPERTY(int props MEMBER props)
+		Q_PROPERTY(QStringList mimeTypes MEMBER mimeTypes)
+		Q_PROPERTY(QList<double> supportedFramerates MEMBER supportedFramerates)
+		Q_PROPERTY(QList<PixelFormat> supportedPixelFormats MEMBER supportedPixelFormats)
+		Q_PROPERTY(QList<int> supportedSamplerates MEMBER supportedSamplerates)
+		Q_PROPERTY(QList<SampleFormat> supportedSampleFormats MEMBER supportedSampleFormats)
+
+	public:
+		union { AVCodecID id; int idNum; };
+		union { AVMediaType type; int typeNum; };
+		QString name;
+		QString longName;
+		int isDecoder;
+		int props;
+		QStringList mimeTypes;
+		QList<double> supportedFramerates;
+		QList<PixelFormat> supportedPixelFormats;
+		QList<int> supportedSamplerates;
+		QList<SampleFormat> supportedSampleFormats;
+
+		LibAVCodecText(const av::Codec &codec);
+		~LibAVCodecText() = default;
+
+		constexpr auto sizeOf() const noexcept { return sizeof(*this); }
+	};
 }

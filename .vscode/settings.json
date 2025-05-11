@@ -134,6 +134,9 @@
     "dense": "cpp",
     "core": "cpp",
     "qaudiodecoder": "cpp",
-    "qguiapplication": "cpp"
+    "qguiapplication": "cpp",
+    "qstring": "cpp",
+    "execution": "cpp",
+    "qqmlapplicationengine": "cpp"
   }
 }
