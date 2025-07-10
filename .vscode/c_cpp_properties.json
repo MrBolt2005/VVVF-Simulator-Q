@@ -16,23 +16,19 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                // "D:/Qt/6.8.1/msvc2022_64/include/**",
-                //"D:/Qt/6.8.2/msvc2022_64/include/**",
-                "C:/dev/vcpkg/installed/x64-windows/include/**",
-                // "${workspaceFolder}/../DSPFilters/**",
-                // "${workspaceFolder}/../qt-notification"//,
-                //"C:/msys64/ucrt64/include/**"
+                "C:/dev/vcpkg/installed/x64-windows/include/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.42.34433\\bin\\Hostx64\\x64\\cl.exe",
+            "compilerPath": "cl.exe",
             "cppStandard": "c++20",
             "compilerArgs": [
                 "/Zc:__cplusplus"
-            ]
+            ],
+            "intelliSenseMode": "${default}"
         }
     ],
     "version": 4

@@ -1,81 +1,66 @@
 #include "BufferedWaveIODevice.hpp"
 // Standard Library Includes
-#include <cstring>
+#include <vector>
 // Package Includes
 #include <QDebug>
 
 namespace VvvfSimulator::Generation::Audio
 {
-	BufferedWaveIODevice::BufferedWaveIODevice(qint64 maxSize, bool __clearDataAfterRead, QObject *parent)
-		: QIODevice(parent)
-		, m_maxSize(maxSize)
-		, clearDataAfterRead(__clearDataAfterRead)
+	BufferedWaveIODevice::BufferedWaveIODevice(
+		const QAudioFormat &fmt,
+		bool readFully,
+		size_type maxSize,
+		QObject *parent
+	)
+		: CircularBuffer(maxSize, parent)
+		, m_fmt(fmt)
+		, m_readFully(readFully)
 	{}
 
 	BufferedWaveIODevice::~BufferedWaveIODevice() = default;
-
-	void BufferedWaveIODevice::addSample(const QByteArray &sample)
+	
+	qint64 BufferedWaveIODevice::bufferDuration(const QAudioFormat *const maybeAnotherFmt) const
 	{
-		if (m_buffer.size() + sample.size() > m_maxSize)
-			m_buffer.remove(0, sample.size()); // Discard on buffer overflow
-		m_buffer.append(sample);
-	}
-
-	bool BufferedWaveIODevice::open(OpenMode mode)
-	{
-		const bool ret = QIODevice::open(mode);
-		if (ret) m_pos = 0;
-		return ret;
+		static_assert(sizeof(int) == sizeof(qint32));
+		
+		const auto fmt = maybeAnotherFmt ? maybeAnotherFmt : &m_fmt;
+		const qint64 bytes = bytesAvailable();
+		qint64 retVal = fmt->durationForBytes(bytes & 0xFFFFFFFF);
+		if (const qint64 masked = bytes & 0xFFFFFFFF00000000; masked)
+			retVal += fmt->durationForBytes(masked >> 32) << 32;
+		return retVal;
 	}
 
 	qint64 BufferedWaveIODevice::readData(char *data, qint64 maxlen)
 	{
-		if (m_pos >= m_buffer.size()) return -1;
-		qint64 len = qMin(maxlen, m_buffer.size() - m_pos);
-		std::memcpy(data, m_buffer.constData() + m_pos, len);
-		if (clearDataAfterRead)
+		const qint64 read = CircularBuffer::readData(data, maxlen);
+
+		if (m_readFully && read < maxlen)
 		{
-			m_buffer.remove(0, len);
-			m_pos = 0;
-		}
-		else m_pos += len;
-		return len;
-	}
-
-	qint64 BufferedWaveIODevice::writeData(const char *data, qint64 len)
-	{
-		qWarning() << QObject::tr("This function/method (writeData) cannot be used on this class."); // Log de aviso
-	//	qWarning("%s: %s\n", __PRETTY_FUNCTION__, qUtf8Printable(QObject::tr("A função writeData não pode ser usada nesta classe.")));
-		Q_UNUSED(data);
-		Q_UNUSED(len);
-		return -1;
-	}
-
-	bool BufferedWaveIODevice::setMaxSize(qint64 maxSize)
-	{
-		if (maxSize <= 0) return false;
-
-		m_maxSize = maxSize;
-
-		// Ensure buffer doesn't exceed the new maximum size
-    if (m_buffer.size() > m_maxSize)
-		{
-			// Trim from beginning (oldest data)
-			m_buffer.remove(0, m_buffer.size() - m_maxSize);
-			// Adjust position if needed
-			m_pos = qMin(m_pos, m_buffer.size());
+			const std::vector<char> empty(maxlen - read);
+			const qint64 result = write(empty.data(), empty.size() * sizeof(char));
+			Q_ASSERT(result == empty.size());
+			return result;
 		}
 
+		return read;
+	}
+
+	bool BufferedWaveIODevice::setReadFully(const bool rf)
+	{
+		if (isOpen()) return false;
+				
+		m_readFully = rf;
+		/* emit readFullyChanged(m_readFully); */
 		return true;
 	}
 
-	qint64 BufferedWaveIODevice::bytesAvailable() const
+	bool BufferedWaveIODevice::setWaveFormat(const QAudioFormat &fmt)
 	{
-		return m_buffer.size() - m_pos;
-	}
-
-	qint64 BufferedWaveIODevice::size() const
-	{
-		return m_buffer.size();
+		if (isOpen()) return false;
+			
+		m_fmt = fmt;
+		/* emit waveFormatChanged(m_fmt); */
+		return true;
 	}
 }

@@ -137,6 +137,11 @@
     "qguiapplication": "cpp",
     "qstring": "cpp",
     "execution": "cpp",
-    "qqmlapplicationengine": "cpp"
-  }
+    "qqmlapplicationengine": "cpp",
+    "qtglobal": "cpp",
+    "*.inc": "cpp",
+    "qdebug": "cpp",
+    "qstringview": "cpp"
+  },
+  "C_Cpp.default.compilerPath": "cl.exe"
 }

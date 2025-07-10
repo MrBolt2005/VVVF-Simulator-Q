@@ -5,28 +5,45 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+#include <string>
 #include <vector>
+// Packages
+#include <QStringView>
 
 namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconMidi
 {
-	std::expected<YamlMasconData, QString> convert(const MidiLoadData & loadData)
+	Outcome::QStringResult<YamlMasconData> convert(const MidiLoadData & loadData)
 	{
 		using namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconMidi;
 
 		// Convert MIDI data
-		const std::filesystem::path fsPath(loadData.path.toStdU16String());
-		std::ifstream file(fsPath, std::ios::binary | std::ios::in);
-		if (!file.is_open()) return std::unexpected(QObject::tr("Failed to open MIDI file: %1").arg(fsPath.root_path().native()));
+		const std::u16string_view fsStrView(
+			(const char16_t *)loadData.path.constData(), loadData.path.size());
+		const std::filesystem::path fsPath(fsStrView);
+		QFile file(fsPath);
+		if (!file.open(QIODeviceBase::ReadOnly /* | Binary */))
+			return QObject::tr("Failed to open MIDI file: %1").arg(fsPath.root_path().native());
 
-		// Read the file into a vector of uint8_t
-		const std::vector<uint8_t> fileData((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		// Read the file into a memory map of uint8_t
+		const uint8_t *fileData = file.map(0, file.size());
+		if (fileData == nullptr)
+			return QObject::tr("Failed to map MIDI file data: %1").arg(fsPath.root_path().native());
 		
 		libremidi::reader reader;
-		const auto parseResult = reader.parse(fileData);
+		const auto parseResult = reader.parse(fileData, file.size());
 		if (parseResult == libremidi::reader::parse_result::invalid)
-			return std::unexpected(QObject::tr("Failed to parse MIDI file: %1").arg(fsPath.root_path().native()));
+			return QObject::tr("Failed to parse MIDI file: %1").arg(fsPath.root_path().native());
 
-		auto converted_Constructs = getTimeLine(reader, loadData.track);
+		std::vector<NoteEventSimple> converted_Constructs;
+		try
+		{
+			converted_Constructs = getTimeLine(reader, loadData.track);
+		}
+		catch (const std::out_of_range &ex)
+		{
+			return QObject::tr("Failed to convert MIDI events at file (%1), exception raised: %2")
+				.arg(fsPath.root_path().native()).arg(ex.what());
+		}
 		YamlMasconData mascon_Data;
 
 		double totalTime = 0.0;
@@ -68,6 +85,8 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconMidi
 				converted_Constructs.erase(converted_Constructs.begin() + *it);
 			}
 		}
+
+		return mascon_Data;
 	}
 
 	std::vector<NoteEventSimple> getTimeLine(const libremidi::reader& midiData, int track_num)

@@ -1,39 +1,46 @@
 #pragma once
 
 // Package Includes
-#include <QBuffer>
-#include <QByteArray>
-#include <QIODevice>
+#include <QAudioFormat>
+// Internal
+#include "../Util/CircularBuffer.hpp"
 
 namespace VvvfSimulator::Generation::Audio
 {
 	// Allow injecting individual samples at a time for a Qt audio sink buffer.
-	class BufferedWaveIODevice : public QIODevice
+	class BufferedWaveIODevice : public Util::CircularBuffer
 	{
 		Q_OBJECT
-		Q_PROPERTY(qint64 maxSize READ maxSize WRITE setMaxSize)
+		Q_PROPERTY(bool readFully READ readFully WRITE setReadFully)
 
-		QByteArray m_buffer;
-		qint64 m_pos = 0;
-		qint64 m_maxSize = 80000;
+		QAudioFormat m_fmt;
+		bool m_readFully;
+
 	public:
-		bool clearDataAfterRead = true;
-		
-		BufferedWaveIODevice(qint64 maxSize = 80000, bool __clearDataAfterRead = true, QObject *parent = nullptr);
+		explicit BufferedWaveIODevice(
+			const QAudioFormat &fmt = QAudioFormat(),
+			bool readFully = true,
+			size_type maxSize = 16384,
+			QObject *parent = nullptr
+		);
 		~BufferedWaveIODevice() override;
 
-		qint64 bytesAvailable() const override;
-		qint64 size() const override;
-		constexpr qint64 maxSize() const noexcept
-		{
-			return m_maxSize;
-		}
-		
+		virtual qint64 bufferDuration(const QAudioFormat *const maybeAnotherFmt = nullptr) const;
+		constexpr bool readFully() const noexcept { return m_readFully; }
+		constexpr QAudioFormat waveFormat() const noexcept { return m_fmt; }
+		constexpr const QAudioFormat &waveFormatRef() const noexcept { return m_fmt; }
+
+	/*
+	signals:
+    void readFullyChanged(bool arg);
+    void waveFormatChanged(const QAudioFormat &fmt);
+	*/
+
 	public slots:
-		void addSample(const QByteArray& sample);
-		bool open(OpenMode mode) override;
-		qint64 readData(char *data, qint64 maxlen) override;
-		qint64 writeData(const char *data, qint64 len) override;
-		bool setMaxSize(qint64 maxSize);
+		virtual bool setReadFully(const bool rf);
+		virtual bool setWaveFormat(const QAudioFormat &fmt);
+
+	protected:
+		qint64 readData(char *data, qint64 maxLen) override;
 	};
 }
