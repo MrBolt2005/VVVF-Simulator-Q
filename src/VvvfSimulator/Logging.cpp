@@ -1,5 +1,7 @@
 #include "Logging.hpp"
 
+#include <QDebug>
+#include <QMessageBox>
 #include <QObject>
 
 void VvvfSimulator::Logging::consoleAndMsgBoxLog(const QString &msg, const QMessageLogContext &context, QtMsgType type, QWidget *parent)

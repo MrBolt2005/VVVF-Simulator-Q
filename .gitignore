@@ -1,6 +1,9 @@
 # Ignore build directory
-build/
+build*/
 
 .vs/
 CMakeSettings.json
 .vscode/
+.cache/
+.kdev4/
+*.kdev4

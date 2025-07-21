@@ -35,6 +35,7 @@ return x;
 
 namespace VvvfSimulator::Generation::Audio
 {
+	// TODO: Consider removing this implementation later
 	AudioWriter::AudioWriter(QObject *parent)	
 		: QObject(parent)
 		// , m_flags(0)

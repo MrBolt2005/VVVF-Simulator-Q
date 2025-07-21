@@ -19,18 +19,22 @@
 // Logging.hpp
 // Version 1.9.1.1
 
-// Standard Library Includes
+// Standard Library
 #include <array>
-#include <expected>
+#include <cstdlib>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
 
-// Package Includes
+// Packages
 #include <QDebug>
 #include <QMessageBox>
 #include <QtGlobal>
 #include <QWidget>
+
+// Internal
+#include "Outcome.hpp"
 
 // If compiling on MSVC:
 #if defined(_MSC_VER)
@@ -56,7 +60,7 @@
 namespace VvvfSimulator::Logging
 {
 	template <typename Callable, typename = std::enable_if_t<std::is_invocable_v<Callable>>>
-	std::expected<std::string, int> getDemangledCallableSignature(Callable callable)
+	inline Outcome::Result<std::string, int> getDemangledCallableSignature(Callable callable)
 	{
 		#if defined(_MSC_VER)
 
@@ -72,19 +76,16 @@ namespace VvvfSimulator::Logging
 		
 		// Code for the libstdc++ ABI
 		int status;
-		const auto demangledName_c_str = abi::__cxa_demangle(typeid(callable).name(), NULL, NULL, &status);
+		std::unique_ptr<const char[], decltype(std::free)> demangledName_c_str(
+			abi::__cxa_demangle(typeid(callable).name(), nullptr, nullptr, &status),
+			&std::free);
 		if (status == 0)
 		{
 			std::string demangledName(demangledName_c_str);
-			std::free(demangledName_c_str);
-			// Definitely **not** needed, but maybe we could play it safe anyways and it still has "negligible" runtime costs, whatsoever:
-			//demangledName_c_str = nullptr;
 			return demangledName;
 		}
 		else
 		{
-			if (demangledName_c_str) std::free(demangledName_c_str);
-			//demangledName_c_str = nullptr;
 			return std::unexpected(status);
 		}
 

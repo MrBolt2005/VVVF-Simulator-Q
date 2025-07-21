@@ -38,6 +38,42 @@ namespace VvvfSimulator::Generation::Video
 		);
 		~VideoWriter() override;
 
+		// Getters
+		int64_t                             bitRate()        const;
+		std::pair<int64_t, int64_t>         bitRateRange()   const;
+		av::Codec                           codec()          const;
+		QString                             errorString()    const;
+		Util::String::TranslatableFmtString errorStringRaw() const;
+		std::filesystem::path               fileName()       const;
+		int                                 flags()          const;
+		int                                 flags2()         const;
+		bool																isOpen()         const;
+		av::Dictionary                      option()         const;
+		av::PixelFormat                     pixelFormat()    const;
+		QSize                               size()           const;
+		av::Rational                        timeBase()       const;
+		int																  strict()         const;
+
+	public slots:
+		// Setters
+		bool setBitRate(int64_t bitRate);
+		bool setBitRateRange(const std::pair<int64_t, int64_t> &bitRateRange);
+		bool setCodec(const av::Codec &codec);
+		bool setFileName(const std::filesystem::path &fileName);
+		bool setFlags(const std::pair<int, int> &flags);
+		bool setFlags(int flags);
+		bool setFlags2(int flags);
+		bool setOptions(const av::Dictionary &opts);
+		bool setOptions(av::Dictionary &&opts);
+		bool setPixelFormat(av::PixelFormat pixelFormat);
+		bool setSize(const QSize &size);
+		bool setTimeBase(const av::Rational &timeBase);
+		bool setStrict(int strict);
+
+		void close();
+		bool open();
+		void write(const QImage &image, av::Packet *packet = nullptr);
+
 	private:
 		Util::Thread::MutexAPtrWrapper m_lock;
 
