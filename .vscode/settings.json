@@ -141,7 +141,8 @@
     "qtglobal": "cpp",
     "*.inc": "cpp",
     "qdebug": "cpp",
-    "qstringview": "cpp"
+    "qstringview": "cpp",
+    "qtprocessordetection": "cpp"
   },
   "C_Cpp.default.compilerPath": "/usr/sbin/g++",
   "C_Cpp.default.cppStandard": "c++20",
