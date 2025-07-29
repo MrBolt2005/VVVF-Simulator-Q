@@ -29,14 +29,19 @@ namespace VvvfSimulator::Util::SIMD
 			return info;
 		}
 
+		using namespace Qt::Literals::StringLiterals;
+
 		const PlatformConfiguration PlatformConfig_x86_64 =
 		{
-			"x86",
-			"x86-64",
+			"x86"_ba,
+			"x86-64"_ba,
+			QByteArrayLiteral(SIMD_X86_64_ARCH_STRING),
 			{
-				typeid(float), typeid(double), typeid(int8_t), typeid(uint8_t),
-				typeid(int16_t), typeid(uint16_t), typeid(int32_t),
-				typeid(uint32_t), typeid(int64_t), typeid(uint64_t)
+				typeid(float), typeid(double),
+				typeid(char), typeid(int8_t), typeid(uint8_t),
+				typeid(int16_t), typeid(uint16_t),
+				typeid(int32_t), typeid(uint32_t),
+				typeid(int64_t), typeid(uint64_t)
 			},
 			64,   // Cache line size
 			64,   // Maximum vector size - AVX-512
@@ -46,12 +51,15 @@ namespace VvvfSimulator::Util::SIMD
 
 		const PlatformConfiguration PlatformConfig_x86_32 =
 		{
-			"x86",
-			"x86 (IA-32)",
+			"x86"_ba,
+			"x86 (IA-32)"_ba,
+			QByteArrayLiteral(SIMD_X86_32_ARCH_STRING),
 			{
-				typeid(float), typeid(double), typeid(int8_t), typeid(uint8_t),
-				typeid(int16_t), typeid(uint16_t), typeid(int32_t),
-				typeid(uint32_t), typeid(int64_t), typeid(uint64_t)
+				typeid(float), typeid(double),
+				typeid(char), typeid(int8_t), typeid(uint8_t),
+				typeid(int16_t), typeid(uint16_t),
+				typeid(int32_t), typeid(uint32_t),
+				typeid(int64_t), typeid(uint64_t)
 			},
 			64,   // Cache line size
 			16,   // Maximum vector size - SSE
@@ -61,11 +69,14 @@ namespace VvvfSimulator::Util::SIMD
 
 		const PlatformConfiguration PlatformConfig_ARM64 =
 		{
-			"ARM",
-			"ARM (AArch64)",
+			"ARM"_ba,
+			"ARM (AArch64)"_ba,
+			QByteArrayLiteral(SIMD_ARM64_ARCH_STRING),
 			{
-				typeid(float), typeid(double), typeid(int8_t), typeid(uint8_t),
-				typeid(int16_t), typeid(uint16_t), typeid(int32_t), typeid(uint32_t)
+				typeid(float), typeid(double),
+				typeid(char), typeid(int8_t), typeid(uint8_t),
+				typeid(int16_t), typeid(uint16_t),
+				typeid(int32_t), typeid(uint32_t)
 			},
 			64,   // Cache line size
 			256,  // Maximum vector size - SVE
@@ -75,11 +86,14 @@ namespace VvvfSimulator::Util::SIMD
 
 		const PlatformConfiguration PlatformConfig_ARM32 =
 		{
-			"ARM",
-			"ARM (32-bit)",
+			"ARM"_ba,
+			"ARM (32-bit)"_ba,
+			QByteArrayLiteral(SIMD_ARM32_ARCH_STRING),
 			{
-				typeid(float), typeid(double), typeid(int8_t), typeid(uint8_t),
-				typeid(int16_t), typeid(uint16_t), typeid(int32_t), typeid(uint32_t)
+				typeid(float), typeid(double),
+				typeid(char), typeid(int8_t), typeid(uint8_t),
+				typeid(int16_t), typeid(uint16_t),
+				typeid(int32_t), typeid(uint32_t)
 			},
 			64,   // Cache line size
 			16,   // Maximum vector size - NEON
@@ -89,11 +103,14 @@ namespace VvvfSimulator::Util::SIMD
 
 		const PlatformConfiguration PlatformConfig_WASM =
 		{
-			"WASM",
-			"WebAssembly (WASM)",
+			"WASM"_ba,
+			"WebAssembly (WASM)"_ba,
+			QByteArrayLiteral(SIMD_WASM_ARCH_STRING),
 			{
-				typeid(float), typeid(double), typeid(int8_t), typeid(uint8_t),
-				typeid(int16_t), typeid(uint16_t), typeid(int32_t), typeid(uint32_t)
+				typeid(float), typeid(double),
+				typeid(char), typeid(int8_t), typeid(uint8_t),
+				typeid(int16_t), typeid(uint16_t),
+				typeid(int32_t), typeid(uint32_t)
 			},
 			64,   // Cache line size
 			16,   // Maximum vector size - WASM SIMD (128-bit)
@@ -103,8 +120,9 @@ namespace VvvfSimulator::Util::SIMD
 
 		const PlatformConfiguration PlatformConfig_Generic =
 		{
-			"Generic",
-			"Generic SIMD architecture",
+			"Generic"_ba,
+			"Generic SIMD architecture"_ba,
+			QByteArrayLiteral(SIMD_GENERIC_ARCH_STRING),
 			{},
 			-1,   // Cache line size
 			-1,   // Maximum vector size - Generic
@@ -113,17 +131,17 @@ namespace VvvfSimulator::Util::SIMD
 		};
 
 		#if   defined(Q_PROCESSOR_X86_64)
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_x86_64;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_x86_64;
 		#elif defined(Q_PROCESSOR_X86) // /Q_PROCESSOR_X86_32
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_x86_32;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_x86_32;
 		#elif defined(Q_PROCESSOR_ARM_64)
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_ARM64;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_ARM64;
 		#elif defined(Q_PROCESSOR_ARM_32)
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_ARM32;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_ARM32;
 		#elif defined(Q_PROCESSOR_WASM)
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_WASM;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_WASM;
 		#else
-			const PlatformConfiguration *PlatformConfig_Default = &PlatformConfig_Generic;
+			const PlatformConfiguration *const PlatformConfig_Default = &PlatformConfig_Generic;
 			#pragma message("Limited SIMD support: only generic operations available")
 		#endif
 	}
