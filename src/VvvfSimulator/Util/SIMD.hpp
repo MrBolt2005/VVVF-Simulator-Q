@@ -155,63 +155,6 @@ namespace VvvfSimulator::Util::SIMD
 	//
 	// Automatic runtime dispatch
 	//
-	template <typename Function, typename... Args>
-	inline auto runtimeDispatch(Function &&func, Args &&...args)
-	{
-		return xsimd::dispatch<DefaultArchList>(
-			std::forward<Function>(func),
-			std::forward<Args>(args)...
-		);
-	}
-
-	//
-	// Automatic runtime dispatch: Extern & instantiation helpers
-	//
-
-	template <
-		template <typename, typename> class TemplateName,
-		typename T, typename Arch = xsimd::default_arch
-	>
-	void externTemplate()
-	{
-		extern template struct TemplateName<T, Arch>;
-	}
-
-	template <
-		template <typename, typename> class TemplateName,
-		typename T, typename Arch = xsimd::default_arch
-	>
-	void instantiateTemplate()
-	{
-		template struct TemplateName<T, Arch>;
-	}
-
-	// Helper to pack
-	template <
-		template<typename, typename> class TemplateName,
-		typename... Types, typename... Archs
-	>
-	void forEachTypeArchExtern(std::tuple<Types...>, xsimd::arch_list<Archs...>)
-	{
-		(void)std::initializer_list<int>{
-			( (void)externTemplate<TemplateName, Types, Archs>(), 0 )...
-		};
-	}
-
-	template <
-		template<typename, typename> class TemplateName,
-		typename... Types, typename... Archs
-	>
-	void forEachTypeArchInstantiate(std::tuple<Types...>, xsimd::arch_list<Archs...>)
-	{
-		(void)std::initializer_list<int>{
-			( (void)instantiateTemplate<TemplateName, Types, Archs>(), 0 )...
-		};
-	}
-
-	#define SIMD_EXTERN_FOR_LISTS(TemplateName, ArchList, TypeList) \
-		forEachTypeArchExtern<TemplateName>(TypeList{}, ArchList{});
-
-	#define SIMD_INSTANTIATE_FOR_LISTS(TemplateName, ArchList, TypeList) \
-		forEachTypeArchInstantiate<TemplateName>(TypeList{}, ArchList{});
+	#define SIMD_EXTERN_FOR_LISTS(TemplateName, ArchList, TypeList)
+	#define SIMD_INSTANTIATE_FOR_LISTS(TemplateName, ArchList, TypeList)
 }

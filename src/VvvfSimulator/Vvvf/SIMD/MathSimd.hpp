@@ -41,5 +41,7 @@ namespace NAMESPACE_VVVF::InternalMath::Functions
 			for (; i < x.size(); i++) rv[i] = sin(x[i]);
 			return rv;
 		}
+
+		SIMD_EXTERN_FOR_LISTS(sineBatchDetail, Util::SIMD::DefaultArchList, std::tuple<float, double, long double>);
 	}
 }

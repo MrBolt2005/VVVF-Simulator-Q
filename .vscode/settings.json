@@ -155,7 +155,7 @@
     "stacktrace": "cpp",
     "syncstream": "cpp"
   },
-  "C_Cpp.default.compilerPath": "/usr/sbin/g++",
+  "C_Cpp.default.compilerPath": "/usr/bin/gcc",
   "C_Cpp.default.cppStandard": "c++20",
   "C_Cpp.default.includePath": [
     "C:\\dev\\vcpkg\\installed\\x64-windows\\include"
