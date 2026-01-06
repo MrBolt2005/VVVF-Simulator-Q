@@ -30,7 +30,6 @@ namespace VvvfSimulator::Generation
 	class QtVideoWriter : public QObject
 	{
 		Q_OBJECT
-		using VideoWriterCodecContextType = av::VideoCodecContext<av::VideoEncoderContext, av::Direction::Encoding>;
 
 		// Report: Trying to reorder members according to creation order
 
@@ -41,7 +40,7 @@ namespace VvvfSimulator::Generation
 		AVCodecID m_codecID; // size : 4 bytes
 		av::PixelFormat m_pixelFormat; // size : 4 bytes
 		std::optional<av::FormatContext> m_formatContext;
-		std::optional<VideoWriterCodecContextType> m_codecContext;
+		std::optional<av::VideoEncoderContext> m_codecContext;
 		std::optional<av::Stream> m_stream;
 		std::optional<av::Packet> m_packet;
 		//av::VideoFrame m_frame;

@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstring>
 #include <optional>
+#include <string>
 // Packages
 #include <avcpp/audioresampler.h>
 #include <avcpp/frame.h>
@@ -15,45 +16,46 @@
 #include "../../../Vvvf/Calculate.hpp"
 #include "../../../Yaml/VvvfSound/YamlVvvfWave.hpp"
 
-#define PRINT_FILE_ERROR qWarning() << QObject::tr( \
-	"Could not open the file (%1) on object creation: %2" \
-).arg(m_file.fileName()).arg(m_file.errorString()); \
+#define WARN_FILE_ERROR \
+m_warning = { \
+	"Could not open the file (%1) on object creation: %2", \
+	{{m_file.fileName()}, {m_file.errorString()}} \
+}; \
+m_isWarnLast = true;
 
 namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 {
 	BufferedWaveFileWriter::BufferedWaveFileWriter
 	(
-		const std::filesystem::path *const path,
+		const std::filesystem::path &path,
 		int samplingFrequency,
-		qint64 maxBufferSize,
+		BufferedWaveIODevice::size_type maxBufferSize,
 		bool openOnCreation,
 		bool startOnCreation
 	)
-		: m_Buffer(new BufferedWaveIODevice(maxBufferSize < 0 ? samplingFrequency : maxBufferSize))
+		: m_file(path)
 	/*
 		//, m_file()
 		//, m_audioSink(nullptr)
 		//, m_isRunning(false)
 	*/
-	{	
-		if (path) m_file.setFileName(*path);
-		
+	{
 		QAudioFormat format;
 		format.setSampleRate(samplingFrequency);
 		format.setChannelCount(1);
 		format.setSampleFormat(QAudioFormat::Float);
 
+		m_Buffer.reset(new BufferedWaveIODevice(
+			format, true, maxBufferSize < 0 ? samplingFrequency : maxBufferSize
+		));
 		m_audioSink.emplace(format);
 
-		if (openOnCreation && path && !m_file.open(QIODeviceBase::WriteOnly))
-			PRINT_FILE_ERROR
+		if (openOnCreation && !path.empty() && !m_file.open(QIODevice::WriteOnly))
+			WARN_FILE_ERROR
 
 		// Start the sink as soon as the object gets constructed.
-		if (startOnCreation) // start();
-		{
-			m_audioSink->start(m_Buffer.get());
-			m_isRunning = true;
-		}
+		if (startOnCreation)
+			if (!start()) WARN_FILE_ERROR
 	}
 
 	BufferedWaveFileWriter::~BufferedWaveFileWriter()
@@ -61,16 +63,15 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 		close();
 	}
 
-	qint64 BufferedWaveFileWriter::addSample(const QByteArray &sample)
+	qint64 BufferedWaveFileWriter::addSample(const QByteArrayView &sample)
 	{
 		if (!m_isRunning) return -1;
 
-		m_Buffer->addSample(sample);
 		qint64 retVal = sample.size();
+		m_Buffer->write(sample.constData(), retVal);
 
-		if (m_Buffer->size() >= m_Buffer->maxSize())
+		if (const qint64 size = m_Buffer->size(); size >= m_Buffer->maxSize())
 		{
-			const auto size = m_Buffer->size();
 			const QByteArray data = m_Buffer->read(size);
 			if (const qint64 ret2 = m_file.write(data); ret2 > 0) retVal += ret2;
 		}
@@ -103,7 +104,9 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 	bool BufferedWaveFileWriter::isOpen() const { return m_file.isOpen(); }
 
 	std::filesystem::path BufferedWaveFileWriter::fileName() const
-	{ return m_file.filesystemFileName(); }
+	{
+		return m_file.filesystemFileName();
+	}
 
 	bool BufferedWaveFileWriter::open(const std::filesystem::path *const path = nullptr)
 	{
@@ -114,8 +117,8 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 			return true;
 		}
 		if (path) m_file.setFileName(*path);
-		const bool retVal = m_file.open(QIODeviceBase::WriteOnly);
-		// if (!retVal) PRINT_FILE_ERROR;
+		const bool retVal = m_file.open(QIODevice::WriteOnly);
+		// if (!retVal) WARN_FILE_ERROR;
 		return retVal;
 	}
 
@@ -159,10 +162,12 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 
 	// End of BufferedWaveFileWriter
 
-	Outcome::QStringResult<bool> reSample(int newSamplingRate, const QDir &inputPath, const std::filesystem::path &outputPath, bool deleteOld)
+	Outcome::QStringResult<bool> reSample(int newSamplingRate, const QString &inputPath, const std::filesystem::path &outputPath, bool deleteOld)
 	{
+		static_assert(sizeof(QChar) == sizeof(char16_t));
+		
 		QAudioDecoder decoder;
-		decoder.setSource(QUrl::fromLocalFile(inputPath.path()));
+		decoder.setSource(inputPath);
 
 		const av::SampleFormat format(getAVSampleFormat(decoder.audioFormat().sampleFormat()));
 		if (format == AV_SAMPLE_FMT_NONE)
@@ -217,7 +222,7 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 			QObject::connect(&decoder, &QAudioDecoder::finished, [&]() {
 				outFile.close();
 				if (deleteOld)
-					if (!QFile::remove(inputPath.path())) retVal = false;
+					if (!QFile::remove(inputPath)) retVal = false;
 				finished = true;
 			});
 
@@ -247,12 +252,12 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 		NAMESPACE_VVVF::Struct::VvvfValues control{};
 		constexpr int downSampledFrequency = 44100;
 
-		const std::filesystem::path exportPath = useRaw
-			? Path
-			: (std::filesystem::absolute(Path)
-				/= QDateTime::currentDateTime().toString("yyyyMMddhhmmss").toStdU16String())
-				/= ".temp";
-		BufferedWaveFileWriter writer(&exportPath, samplingFreq, -1);
+		const std::filesystem::path exportPath = useRaw ? Path : (Path
+			/ QDateTime::currentDateTime().toString(QStringLiteral(
+				"yyyyMMddhhmmss")
+			).toStdU16String())
+			/ ".temp";
+		BufferedWaveFileWriter writer(exportPath, samplingFreq, -1);
 
 		bool loop = true;
 		while (loop)
@@ -261,7 +266,7 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 			control.sawTime += dt;
 			std::vector<float> samples = getSample(control, genParam.soundData);
 
-			for (const float &sample : samples) writer.addSample(writer.rawToByteArray<float>(sample * volumeFactor));
+			for (const float &sample : samples) writer.addSample({sample * volumeFactor});
 			genParam.progress.progress++;
 			bool flagContinue = genParam.masconData.checkForFreqChange(control, genParam.soundData, 1.0 / samplingFreq);
 			loop = !genParam.progress.cancel && flagContinue;
@@ -270,7 +275,9 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 		writer.close();
 		if (!useRaw)
 		{
-			reSample(downSampledFrequency, exportPath, Path, true);
+			const auto in = exportPath.u16string();
+			const QString input = QString::fromRawData(reinterpret_cast<const QChar *>(in.data()), in.size());
+			reSample(downSampledFrequency, input, Path, true);
 			genParam.progress.progress *= 1.05;
 		}
 
@@ -293,4 +300,4 @@ namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 	}
 } // namespace VvvfSimulator::Generation::Audio::VvvfSound::Audio
 
-#undef PRINT_FILE_ERROR
+#undef WARN_FILE_ERROR

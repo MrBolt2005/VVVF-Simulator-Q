@@ -21,7 +21,6 @@
 
 // Standard Library
 #include <cinttypes>
-#include <expected>
 // Packages
 #include <libremidi/libremidi.hpp>
 #include <libremidi/reader.hpp>
@@ -29,6 +28,7 @@
 // Internal
 #include "../../GUI/Mascon/LoadMidi.qml.hpp"
 #include "Namespace_YamlMasconControl.h"
+#include "../../Outcome.hpp"
 #include "./YamlMasconAnalyze.hpp"
 
 namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconMidi
@@ -47,7 +47,7 @@ namespace NAMESPACE_YAMLMASCONCONTROL::YamlMasconMidi
 				NoteEventSimpleData On, Off;
 	};
 
-	std::expected<YamlMasconData, QString> convert(const MidiLoadData& loadData);
+	Outcome::QStringResult<YamlMasconData> convert(const MidiLoadData& loadData);
 
 	// Helper function to convert ticks to milliseconds
 	constexpr double ticks_to_ms(int ticks, float division, uint32_t tempo)
