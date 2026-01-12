@@ -24,7 +24,7 @@
 
 namespace NAMESPACE_VVVF::InternalMath
 {
-	double Functions::saw(double x)
+	double Functions::triangle(double x)
 	{
 		double fixed_x = x - std::floor(x * m_1_2PI) * m_2PI;
 		if (0 <= fixed_x && fixed_x < m_PI_2)
@@ -33,6 +33,12 @@ namespace NAMESPACE_VVVF::InternalMath
 			return m_2_PI * fixed_x - 2;
 		else return 4 - m_2_PI * fixed_x;
 	}
+
+	double Functions::saw(double x)
+	{
+        double Phase = m_1_PI * x - 2.0 * std::floor(x * m_1_2PI) - 1.0;
+        return Phase;
+    }
 
 	double Functions::square(double x)
 	{
@@ -120,4 +126,19 @@ namespace NAMESPACE_VVVF::InternalMath
 			return y;
 		}
 	}
+
+    QPointF norm(const QPointF &point)
+    {
+        if (point.isNull()) return QPointF(0.0, 0.0);
+		double length = std::sqrt(point.x() * point.x() + point.y() * point.y());
+		return QPointF(point.x() / length, point.y() / length);
+    }
+    
+	QPointF rotate(const QPointF &point, double angleRad)
+    {
+        double cosA = std::cos(angleRad);
+		double sinA = std::sin(angleRad);
+		return QPointF(point.x() * cosA - point.y() * sinA,
+					   point.x() * sinA + point.y() * cosA);
+    }
 }

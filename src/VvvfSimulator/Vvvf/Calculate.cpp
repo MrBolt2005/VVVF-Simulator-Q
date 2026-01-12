@@ -5,36 +5,73 @@
 #include <random>
 // Internal
 #include "InternalMath.hpp"
+// Packages
+#include <QDebug>
+#include <QObject>
 
 namespace NAMESPACE_VVVF::Calculate
 {
 	using namespace NAMESPACE_VVVF::InternalMath;
-	
-	double getBaseWaveform(const YamlPulseMode &mode, double x, double amplitude, double T, double initialPhase, bool* OK)
-	{
-		using BaseWaveType = YamlPulseMode::BaseWaveType;
+
+    void getBaseWaveParameter(const VvvfValues &control, const YamlPulseMode &mode, int_fast8_t phase, double initialPhase, double *outX, double *outRawX)
+    {
+		if (!outX && !outRawX) {
+			qDebug() << "Calculate::getBaseWaveParameter:" << QObject::tr("No output pointer(s) provided.");
+			return;
+		}
+		
+		double sineTime = control.sinTime;
+		double rawX = control.sinAngleFreq * sineTime + m_2PI_3 * phase + initialPhase;
+		if (outRawX) *outRawX = rawX;
+		double sineX;
+		if (mode.DiscreteTime.getEnabled()) {
+			sineX = discreteTimeLine(rawX, mode.DiscreteTime.getSteps(), mode.DiscreteTime.Mode);
+		} else sineX = rawX;
+		if (outX) *outX = sineX;
+    }
+
+    double getBaseWaveform(const VvvfValues &control, const YamlPulseMode &mode, double x, double amplitude, double T, double initialPhase, bool *OK)
+    {
+		using YamlPulseMode::BaseWaveType;
+		using namespace InternalMath::Functions;
 		
 		double baseValue;
 		switch (mode.BaseWave)
 		{
 		case BaseWaveType::Sine:
-			baseValue = InternalMath::Functions::sine(x);
+			baseValue = sine(x);
 			break;
 		case BaseWaveType::Saw:
-			baseValue = -(InternalMath::Functions::saw(x));
+			baseValue = -saw(x);
 			break;
 		case BaseWaveType::Square:
-			baseValue = InternalMath::Functions::square(x);
+			baseValue = square(x);
 			break;
 		case BaseWaveType::ModifiedSineA:
-			baseValue = InternalMath::Functions::modifiedSine(x, 1);
+			baseValue = modifiedSine(x, 1);
 			break;
 		case BaseWaveType::ModifiedSineB:
-			baseValue = InternalMath::Functions::modifiedSine(x, 2);
+			baseValue = modifiedSine(x, 2);
 			break;
 		case BaseWaveType::ModifiedSawA:
-			baseValue = InternalMath::Functions::modifiedSaw(x);
+			baseValue = modifiedSaw(x);
 			break;
+		case BaseWaveType::SV: {
+			double x1, x2, x3;
+			getBaseWaveParameter(control, mode, 0.0, initialPhase, &x1, nullptr);
+			getBaseWaveParameter(control, mode, 1.0, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2.0, initialPhase, &x3, nullptr);
+			SVM::ABC abc = {
+				control.videoSineAmplitude * sine(x1),
+				control.videoSineAmplitude * sine(x2),
+				control.videoSineAmplitude * sine(x3)
+			};
+			SVM::Valbe alBe = abc.clark();
+			auto sector = alBe.estimateSector();
+			FunctionTime ft = alBe.getFunctionTime(sector);
+			SVM::ABC Vsv = ft.getVabc(sector);
+			
+		}
 		default:
 			if (OK != nullptr) *OK = false;
 			return 0.0;
@@ -50,13 +87,13 @@ namespace NAMESPACE_VVVF::Calculate
 			switch (harmonic.Type)
 			{
 			case YamlPulseMode::PulseHarmonic::PulseHarmonicType::Sine:
-				harmonicValue = InternalMath::Functions::sine(harmonic_x);
+				harmonicValue = sine(harmonic_x);
 				break;
 			case YamlPulseMode::PulseHarmonic::PulseHarmonicType::Saw:
-				harmonicValue = -(InternalMath::Functions::saw(harmonic_x));
+				harmonicValue = -saw(harmonic_x);
 				break;
 			case YamlPulseMode::PulseHarmonic::PulseHarmonicType::Square:
-				harmonicValue = InternalMath::Functions::square(harmonic_x);
+				harmonicValue = square(harmonic_x);
 				break;
 			default:
 				if (OK != nullptr) *OK = false;	
@@ -94,9 +131,11 @@ namespace NAMESPACE_VVVF::Calculate
 	}
 	int_fast8_t getHOP(double x, double amplitude, int_fast8_t carrier, int_fast8_t width)
 	{
+		using namespace InternalMath::Functions;
+		
 		int_fast16_t totalSteps = carrier * 2;
 		const double fixed_x = std::fmod(x, m_PI) * totalSteps * m_1_PI,
-		             sawValue = -InternalMath::Functions::saw(carrier * x);
+		             sawValue = -saw(carrier * x);
 		double modulated;
 		     if (fixed_x > totalSteps - 1) modulated = -1.0;
 		else if (fixed_x > totalSteps / 2 + width) modulated = 1.0;
@@ -176,7 +215,7 @@ namespace NAMESPACE_VVVF::Calculate
 		double randomFreq;
 		if (control.randomFreqPreviousTime == 0.0)
 		{
-			const double halfRange = data.range * 0.5;
+			const double halfRange = std::ldexp(data.range, -1); // data.range * 0.5
 			const double diffFreq = std::uniform_real_distribution<double>(-halfRange, halfRange)(control.rnd);
 			const double silentRandomFreq = data.baseFrequency + diffFreq;
 			randomFreq = silentRandomFreq;
@@ -209,7 +248,7 @@ namespace NAMESPACE_VVVF::Calculate
 		if (current_t - solve_t > intervalTime) control.periodicFreqPreviousTime = current_t;
 		return periodicFreq;
 	}
-	WaveValues calculatePhases(VvvfValues &control, const PwmCalculateValues &value, double addInitial, std::array<std::exception_ptr, 3> *ePtrs)
+	WaveValues calculatePhases(VvvfValues &control, const PwmCalculateValues &value, double addInitial, std::span<std::exception_ptr, 3> *ePtrs)
 	{
 		if (control.getSinFreq() < value.minimumFrequency && control.controlFrequency > 0.0)
 			control.videoSineFrequency = value.minimumFrequency;

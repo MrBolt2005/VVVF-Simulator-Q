@@ -52,6 +52,7 @@ namespace NAMESPACE_VVVF::InternalMath
 
 	namespace Functions
 	{
+		double triangle(double x);
 		double saw(double x);
 		inline auto sine(auto x)
 		{ return std::sin(x); }
@@ -133,6 +134,21 @@ namespace NAMESPACE_VVVF::InternalMath
 		};
 
 		double lagrangePolynomial(double x, const std::span<QPointF>& points);
+	}
+
+	//
+	// Point operations
+	//
+
+	QPointF norm(const QPointF& point);
+	QPointF rotate(const QPointF& point, double angleRad);
+	constexpr QPointF max(const QPointF& p1, const QPointF& p2)
+	{
+		return QPointF(std::max(p1.x(), p2.x()), std::max(p1.y(), p2.y()));
+	}
+	constexpr QPointF min(const QPointF& p1, const QPointF& p2)
+	{
+		return QPointF(std::min(p1.x(), p2.x()), std::min(p1.y(), p2.y()));
 	}
 }
 

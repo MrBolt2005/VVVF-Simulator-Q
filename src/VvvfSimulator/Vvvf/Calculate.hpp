@@ -27,6 +27,7 @@
 // Standard Library Includes
 #include <array>
 #include <cinttypes>
+#include <span>
 #include <stdexcept>
 #include <optional>
 // Package Includes
@@ -34,9 +35,10 @@
 
 namespace NAMESPACE_VVVF::Calculate
 {
-	using YamlPulseMode = NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData::YamlControlData::YamlPulseMode;
+	using YamlVvvfSoundData = NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData;
+	using YamlPulseMode = YamlVvvfSoundData::YamlControlData::YamlPulseMode;
 		using DiscreteTimeConfiguration = YamlPulseMode::DiscreteTimeConfiguration;
-	using AmplitudeParameter = NAMESPACE_YAMLVVVFSOUND::YamlVvvfSoundData::YamlControlData::YamlAmplitude::AmplitudeParameter;
+	using AmplitudeParameter = 	YamlVvvfSoundData::YamlControlData::YamlAmplitude::AmplitudeParameter;
 	using CarrierFreq = NAMESPACE_VVVF::Struct::CarrierFreq;
 	using VvvfValues = NAMESPACE_VVVF::Struct::VvvfValues;
 	using WaveValues = NAMESPACE_VVVF::Struct::WaveValues;
@@ -44,8 +46,9 @@ namespace NAMESPACE_VVVF::Calculate
 
 	//double modifiedSine(double x);
 	//double modifiedSaw(double x);
-	double getBaseWaveform(const YamlPulseMode& mode, double x, double amplitude, double T, double initialPhase, bool* OK = nullptr);
-	constexpr int_fast8_t modulateSignal (double sinValue, double sawValue)
+	void getBaseWaveParameter(const VvvfValues& control, const YamlPulseMode& mode, int_fast8_t phase, double initialPhase, double *outX, double *outRawX);
+	double getBaseWaveform(const VvvfValues& control, const YamlPulseMode& mode, double x, double amplitude, double T, double initialPhase, bool* OK = nullptr);
+	constexpr int_fast8_t modulateSignal (double sinValue, double sawValue) noexcept
 	{
 		return sinValue > sawValue ? 1 : 0;
 	}
@@ -70,7 +73,7 @@ namespace NAMESPACE_VVVF::Calculate
 	//
 	// VVVF Calculation
 	//
-	WaveValues calculatePhases(VvvfValues& control, const PwmCalculateValues& value, double addInitial, std::array<std::exception_ptr, 3> *ePtrs = nullptr);
+	WaveValues calculatePhases(VvvfValues& control, const PwmCalculateValues& value, double addInitial, std::span<std::exception_ptr, 3> *ePtrs = nullptr);
 	int_fast8_t calculate3Level(const VvvfValues& control, const PwmCalculateValues& value, double initialPhase);
 	int_fast8_t calculate2Level(const VvvfValues& control, const PwmCalculateValues& value, double initialPhase);
 }
@@ -80,34 +83,86 @@ namespace NAMESPACE_VVVF::SVM
 	using namespace NAMESPACE_VVVF::InternalMath;
 	using WaveValues = NAMESPACE_VVVF::Struct::WaveValues;
 
-	struct FunctionTime
+	class FunctionTime : public std::array<double, 3>
 	{
-		double T0, T1, T2;
+	public:
+		constexpr double &const T0 = (*this)[0];
+		constexpr double &const T1 = (*this)[1];
+		constexpr double &const T2 = (*this)[2];
 
-		constexpr FunctionTime() = default;
-		constexpr FunctionTime(double t0, double t1, double t2) : T0(t0), T1(t1), T2(t2) {}
+		constexpr FunctionTime() noexcept = default;
+		constexpr FunctionTime(double t0, double t1, double t2) noexcept
+		: std::array<double, 3>{t0, t1, t2} {}
 
-		constexpr std::optional<double> operator[](int_fast8_t index) const
-		{
-			switch (index)
-			{
-			case 0: return T0;
-			case 1: return T1;
-			case 2: return T2;
-			default: return std::nullopt;
-			}
-		}
-
-		constexpr FunctionTime operator*(const FunctionTime& value) const
+		constexpr FunctionTime operator*(const FunctionTime& value) const noexcept
 		{
 			return FunctionTime(T0 * value.T0, T1 * value.T1, T2 * value.T2);
 		}
 		
-		constexpr FunctionTime operator*(double value) const
+		constexpr FunctionTime operator*(double value) const noexcept
 		{
 			return FunctionTime(T0 * value, T1 * value, T2 * value);
 		}
+
+		constexpr Vabc getVabc(int_fast8_t sector) noexcept
+		{
+			double u, v, w;
+			switch (sector)
+			{
+			case 1:
+			{
+            	u = T1 + T2 + 0.5 * T0;
+                v = T2 + 0.5 * T0;
+                w = 0.5 * T0;
+            }
+                break;
+            case 2:
+            {
+                u = T1 + 0.5 * T0;
+                v = T1 + T2 + 0.5 * T0;
+                w = 0.5 * T0;
+            }
+                break;
+            case 3:
+            {
+                u = 0.5 * T0;
+                v = T1 + T2 + 0.5 * T0;
+                w = T2 + 0.5 * T0;
+            }
+            	break;
+            case 4:
+        	{
+                u = 0.5 * T0;
+                v = T1 + 0.5 * T0;
+                w = T1 + T2 + 0.5 * T0;
+            }
+                break;
+            case 5:
+            {
+                u = T2 + 0.5 * T0;
+                v = 0.5 * T0;
+                w = T1 + T2 + 0.5 * T0;
+            }
+                break;
+            case 6:
+            {
+                u = T1 + T2 + 0.5 * T0;
+                v = 0.5 * T0;
+                w = T1 + 0.5 * T0;
+            }
+                break;
+			default:
+			{
+				u = 0.0;
+				v = 0.0;
+				w = 0.0;
+			}
+            }
+			return Vabc(u, v, w);
+		}
 	};
+
+	struct Valbe;
 
 	// ABC voltage/current coordinate system
 	struct ABC
@@ -137,6 +192,11 @@ namespace NAMESPACE_VVVF::SVM
 		{
 			return ABC(Ua - value.Ua, Ub - value.Ub, Uc - value.Uc);
 		}
+
+		constexpr Valbe clark() const noexcept
+		{
+			return Valbe(Ua, (Ua + 2.0 * Ub) * m_SQRT3_2);
+		}
 	};
 
 	// Alpha-Beta voltage/current coordinate system
@@ -148,12 +208,12 @@ namespace NAMESPACE_VVVF::SVM
 		constexpr Valbe(double ualpha, double ubeta) : Ualpha(ualpha), Ubeta(ubeta) {}
 		constexpr Valbe(const ABC& abc) : Ualpha(abc.Ua), Ubeta((abc.Ua + 2.0 * abc.Ub) * m_SQRT3_2) {}
 
-		constexpr operator QPointF() const
+		constexpr operator QPointF() const noexcept
 		{
 			return QPointF(Ualpha, Ubeta);
 		}
 
-		constexpr int_fast8_t estimateSector() const
+		constexpr int_fast8_t estimateSector() const noexcept
 		{
 			int_fast8_t A = Ubeta > 0.0 ? 0 : 1,
 			            B = Ubeta - m_SQRT3 * Ualpha > 0.0 ? 0 : 1,
@@ -220,6 +280,48 @@ namespace NAMESPACE_VVVF::SVM
 			}
 			ft.T0 = 1.0 - ft.T1 - ft.T2;
 			return ft;
+		}
+	};
+
+	class DeltaSigma
+	{
+		double integrator = 0.0;
+		double lastProcessTime = 0.0;
+		double lastUpdateTime = 0.0;
+		bool lastOutBit = 0;
+
+	public:
+		constexpr bool process(double input, double nowTime) noexcept
+		{
+			double dt = nowTime - lastProcessTime;
+            lastProcessTime = nowTime;
+
+            double quantized = (lastOutBit == 1) ? 1.0 : -1.0;
+            integrator += (input - quantized) * dt;
+
+            if (nowTime - lastUpdateTime >= FeedbackInterval)
+            {
+                lastOutBit = (integrator >= 0.0) ? 1 : 0;
+                lastUpdateTime = nowTime;
+            }
+
+            return lastOutBit;
+		}
+
+		constexpr void reset(double nowTime = 0.0) noexcept
+		{
+			integrator = 0.0;
+			lastProcessTime = nowTime;
+			lastUpdateTime = nowTime;
+			lastOutBit = 0;
+		}
+
+		constexpr void resetIfLastTime(double lastTime) noexcept
+		{
+			if (lastProcessTime != lastTime)
+			{
+				reset(lastTime);
+			}
 		}
 	};
 }

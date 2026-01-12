@@ -161,7 +161,13 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 
 				enum class BaseWaveType:uint_fast8_t
 				{
-					Sine, Saw, Square, ModifiedSineA, ModifiedSineB, ModifiedSawA
+					Sine, Saw, Square, ModifiedSineA, ModifiedSineB, ModifiedSawA,
+					SV, DPWM30, DPWM60C, DPWM60P, DPWM60N, DPWM120P, DPWM120N
+				};
+
+				enum class BaseWaveOption:uint_fast8_t
+				{
+					RaiseStart, FallStart, TopStart, BottomStart
 				};
 
 				struct PulseHarmonic
@@ -283,6 +289,7 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 			// Compare Base Wave
 			//
 				BaseWaveType BaseWave = BaseWaveType::Sine;
+				BaseWaveOption Option = BaseWaveOption::FallStart;
 
 			//
 			// Discrete Time Configuration
@@ -308,6 +315,7 @@ namespace NAMESPACE_YAMLVVVFSOUND // C++17 Nested Namespace Notation
 					Shift = YPM.Shift;
 					Square = YPM.Square;
 					BaseWave = YPM.BaseWave;
+					Option = YPM.Option;
 					DiscreteTime = YPM.DiscreteTime;
 					PulseHarmonics = YPM.PulseHarmonics;
 					PulseData = YPM.PulseData;
