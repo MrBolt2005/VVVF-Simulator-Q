@@ -35,6 +35,12 @@ set(QT_QML_GENERATE_QMLLS_INI ON)
 add_executable(VvvfSimulator
     src/main.cpp
     src/VvvfSimulator/GUI/MainWindow.qml
+    # Data layer (v1.10.0.0)
+    src/VvvfSimulator/Data/BaseFrequency/Struct.cpp
+    src/VvvfSimulator/Data/BaseFrequency/Analyze.cpp
+    src/VvvfSimulator/Data/Vvvf/Struct.cpp
+    src/VvvfSimulator/Data/Vvvf/Analyze.cpp
+    src/VvvfSimulator/Data/TrainAudio/Struct.cpp
 )
 
 # Add the CMAKE_PREFIX_PATH directories to the target

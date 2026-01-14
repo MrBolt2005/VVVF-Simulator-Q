@@ -70,7 +70,140 @@ namespace NAMESPACE_VVVF::Calculate
 			auto sector = alBe.estimateSector();
 			FunctionTime ft = alBe.getFunctionTime(sector);
 			SVM::ABC Vsv = ft.getVabc(sector);
-			
+			// Return appropriate phase based on which one this is (derived from phase parameter)
+			// For now, use U phase. TODO: pass phase index to properly select U/V/W
+			baseValue = Vsv.U * 2.0 - 1.0;
+			break;
+		}
+		case BaseWaveType::DPWM30: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_6);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			switch (sector) {
+				case 0: case 9:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				case 1: case 4:
+					baseValue = 1.0;
+					break;
+				case 2: case 11:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 3: case 6:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				case 5: case 8:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				default:
+					baseValue = -1.0;
+			}
+			break;
+		}
+		case BaseWaveType::DPWM60C: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_3);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			switch (sector) {
+				case 0:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 1:
+					baseValue = 1.0;
+					break;
+				case 2:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				case 3:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 4:
+					baseValue = -1.0;
+					break;
+				default:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x + m_2PI_3));
+			}
+			break;
+		}
+		case BaseWaveType::DPWM60P: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_6);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			switch (sector) {
+				case 1: case 2:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 3: case 4:
+					baseValue = 1.0;
+					break;
+				case 5: case 6:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				case 7: case 8:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 9: case 10:
+					baseValue = -1.0;
+					break;
+				default:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x + m_2PI_3));
+			}
+			break;
+		}
+		case BaseWaveType::DPWM60N: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_6);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			switch (sector) {
+				case 1: case 2:
+					baseValue = 1.0;
+					break;
+				case 3: case 4:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				case 5: case 6:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x - m_2PI_3));
+					break;
+				case 7: case 8:
+					baseValue = -1.0;
+					break;
+				case 9: case 10:
+					baseValue = sine(x) + (1.0 - amplitude * sine(x + m_2PI_3));
+					break;
+				default:
+					baseValue = sine(x) + (-1.0 - amplitude * sine(x - m_2PI_3));
+			}
+			break;
+		}
+		case BaseWaveType::DPWM120P: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_6);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			if (sector >= 1 && sector <= 4)
+				baseValue = 1.0;
+			else if (sector >= 5 && sector <= 8)
+				baseValue = sine(x) + (1.0 - amplitude * sine(x - m_2PI_3));
+			else
+				baseValue = sine(x) + (1.0 - amplitude * sine(x + m_2PI_3));
+			break;
+		}
+		case BaseWaveType::DPWM120N: {
+			const int sector = static_cast<int>(std::fmod(x, m_2PI) / m_PI_6);
+			double x2, x3;
+			getBaseWaveParameter(control, mode, 1, initialPhase, &x2, nullptr);
+			getBaseWaveParameter(control, mode, 2, initialPhase, &x3, nullptr);
+			if (sector >= 3 && sector <= 6)
+				baseValue = sine(x) + (-1.0 - amplitude * sine(x + m_2PI_3));
+			else if (sector >= 7 && sector <= 10)
+				baseValue = -1.0;
+			else
+				baseValue = sine(x) + (-1.0 - amplitude * sine(x - m_2PI_3));
+			break;
 		}
 		default:
 			if (OK != nullptr) *OK = false;

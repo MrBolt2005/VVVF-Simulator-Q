@@ -1,4 +1,5 @@
-#ifndef NAMESPACE_YAMLVVVFSOUND
+#ifndef NAMESPACE_YAMLVVVFSOUND_H
+#define NAMESPACE_YAMLVVVFSOUND_H
 
 /*
    Copyright © 2025 VvvfGeeks, VVVF Systems
@@ -17,7 +18,10 @@
 */
 
 // Namespace_YamlVvvfSound.h
-// Version 1.9.1.1
+// Version 1.10.0.0 - Migrated to Data/Vvvf
 
-#define NAMESPACE_YAMLVVVFSOUND VvvfSimulator::Yaml::VvvfSound
-#endif // NAMESPACE_YAMLVVVFSOUND
+// Forward to new location
+#include "../../Data/Vvvf/Struct.hpp"
+
+#define NAMESPACE_YAMLVVVFSOUND VvvfSimulator::Data::Vvvf
+#endif // NAMESPACE_YAMLVVVFSOUND_H

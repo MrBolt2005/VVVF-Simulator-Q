@@ -1,4 +1,5 @@
-#ifndef NAMESPACE_YAMLMASCONCONTROL
+#ifndef NAMESPACE_YAMLMASCONCONTROL_H
+#define NAMESPACE_YAMLMASCONCONTROL_H
 
 /*
    Copyright © 2025 VvvfGeeks, VVVF Systems
@@ -17,7 +18,11 @@
 */
 
 // Namespace_YamlMasconControl.h
-// Version 1.9.1.1
+// Version 1.10.0.0 - Migrated to Data/BaseFrequency
 
-#define NAMESPACE_YAMLMASCONCONTROL VvvfSimulator::Yaml::MasconControl
-#endif // NAMESPACE_YAMLMASCONCONTROL
+// Forward to new location
+#include "../../Data/BaseFrequency/Struct.hpp"
+#include "../../Data/BaseFrequency/Analyze.hpp"
+
+#define NAMESPACE_YAMLMASCONCONTROL VvvfSimulator::Data::BaseFrequency
+#endif // NAMESPACE_YAMLMASCONCONTROL_H
