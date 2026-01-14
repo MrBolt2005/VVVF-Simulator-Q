@@ -14,13 +14,13 @@
    limitations under the License.
 */
 
-// Data/TrainAudio/Struct.hpp
+// Data/VehicleAudio.hpp
 // Version 1.10.0.0 - Train audio configuration
 
 #ifndef DATA_TRAINAUDIO_STRUCT_HPP
 #define DATA_TRAINAUDIO_STRUCT_HPP
 
-#include "../Util.hpp"
+#include "Util.hpp"
 #include <vector>
 #include <string>
 
