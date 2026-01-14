@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-// Data/BaseFrequency/Struct.hpp
+// Data/BaseFrequency.hpp
 // Version 1.10.0.0
 
 // Standard Library
@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 // Internal
-#include "../Util.hpp"
+#include "Util.hpp"
 
 namespace VvvfSimulator::Data::BaseFrequency
 {

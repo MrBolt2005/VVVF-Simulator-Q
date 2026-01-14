@@ -1,4 +1,4 @@
-#include "Struct.hpp"
+#include "BaseFrequency.hpp"
 
 // Standard Library
 #include <sstream>
