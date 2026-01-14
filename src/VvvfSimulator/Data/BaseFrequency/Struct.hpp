@@ -20,6 +20,7 @@
 // Version 1.10.0.0
 
 // Standard Library
+#include <optional>
 #include <string>
 #include <vector>
 // Internal
