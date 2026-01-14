@@ -50,7 +50,6 @@ namespace VvvfSimulator::Data::Vvvf
 		return oss.str();
 	}
 }
-/*
 
 // ===== Analysis Methods (ex-Analyze) =====
 

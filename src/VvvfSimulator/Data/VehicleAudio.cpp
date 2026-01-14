@@ -21,9 +21,9 @@
 #include <sstream>
 #include <cmath>
 
-namespace VvvfSimulator::Data::TrainAudio {
+namespace VvvfSimulator::Data {
 
-std::string MotorSpecification::toString() const {
+std::string TrainAudio::MotorSpecification::toString() const {
     std::ostringstream oss;
     oss << "MotorSpec{V=" << V 
         << ", Rs=" << Rs << ", Rr=" << Rr
@@ -33,7 +33,7 @@ std::string MotorSpecification::toString() const {
     return oss.str();
 }
 
-std::string SoundFilter::toString() const {
+std::string TrainAudio::SoundFilter::toString() const {
     std::ostringstream oss;
     oss << "SoundFilter{Type=" << static_cast<int>(Type)
         << ", Gain=" << Gain << ", Freq=" << Frequency 
@@ -41,20 +41,20 @@ std::string SoundFilter::toString() const {
     return oss.str();
 }
 
-std::string HarmonicAmplitude::toString() const {
+std::string TrainAudio::HarmonicAmplitude::toString() const {
     std::ostringstream oss;
     oss << "Amplitude{" << Start << "->" << End 
         << ", " << StartValue << "->" << EndValue << "}";
     return oss.str();
 }
 
-std::string HarmonicDataRange::toString() const {
+std::string TrainAudio::HarmonicDataRange::toString() const {
     std::ostringstream oss;
     oss << "Range{" << Start << "->" << End << "}";
     return oss.str();
 }
 
-std::string HarmonicData::toString() const {
+std::string TrainAudio::HarmonicData::toString() const {
     std::ostringstream oss;
     oss << "Harmonic{" << Harmonic << ", " 
         << Amplitude.toString() << ", " 
@@ -62,7 +62,7 @@ std::string HarmonicData::toString() const {
     return oss.str();
 }
 
-void Struct::setCalculatedGearHarmonic(int Gear1, int Gear2) {
+void TrainAudio::setCalculatedGearHarmonic(int Gear1, int Gear2) {
     std::vector<HarmonicData> gearHarmonicsList;
     
     // Calculate rotation frequency
@@ -96,7 +96,7 @@ void Struct::setCalculatedGearHarmonic(int Gear1, int Gear2) {
     GearSound = gearHarmonicsList;
 }
 
-std::string Struct::toString() const {
+std::string TrainAudio::toString() const {
     std::ostringstream oss;
     oss << "TrainAudioStruct{GearSound=" << GearSound.size()
         << ", HarmonicSound=" << HarmonicSound.size()
@@ -106,7 +106,7 @@ std::string Struct::toString() const {
     return oss.str();
 }
 
-void Struct::loadDefaultImpulseResponse() {
+void TrainAudio::loadDefaultImpulseResponse() {
     // TODO: Load default impulse response from Qt resources
     // This will be implemented when Qt resource system is integrated
     // For now, initialize with empty response
@@ -114,7 +114,7 @@ void Struct::loadDefaultImpulseResponse() {
     ImpulseResponseSampleRate = 192000;
 }
 
-std::vector<float> Struct::getImpulseResponse(int targetSampleRate) const {
+std::vector<float> TrainAudio::getImpulseResponse(int targetSampleRate) const {
     if (ImpulseResponseSampleRate == targetSampleRate) {
         return ImpulseResponse;
     }
@@ -124,4 +124,4 @@ std::vector<float> Struct::getImpulseResponse(int targetSampleRate) const {
     return ImpulseResponse;
 }
 
-} // namespace VvvfSimulator::Data::TrainAudio
+} // namespace VvvfSimulator::Data

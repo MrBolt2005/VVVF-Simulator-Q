@@ -20,7 +20,7 @@
 // Version 1.10.0.0
 
 // Standard Library
-#include <cstdint>
+#include <cinttypes>
 #include <map>
 #include <optional>
 #include <string>
@@ -31,8 +31,8 @@
 namespace VvvfSimulator::Data::Vvvf
 {
 	// Forward declarations for Analyze
-	enum class PulseMode : uint8_t;
-	enum class WaveForm : uint8_t;
+	enum class PulseMode : uint_fast8_t;
+	enum class WaveForm : uint_fast8_t;
 	struct AcceleratePattern;
 	struct BrakingPattern;
 	struct ControlFrequencyData;
@@ -86,7 +86,7 @@ namespace VvvfSimulator::Data::Vvvf
 			/// Function value for parametric curves
 			struct FunctionValue
 			{
-				enum class FunctionType : uint8_t
+				enum class FunctionType : uint_fast8_t
 				{
 					Proportional,
 					Inv_Proportional,
@@ -106,35 +106,35 @@ namespace VvvfSimulator::Data::Vvvf
 			/// Pulse mode configuration
 			struct Pulse
 			{
-				enum class PulseTypeName : uint8_t
+				enum class PulseTypeName : uint_fast8_t
 				{
 					ASYNC, SYNC, CHM, SHE, HO, ΔΣ
 				};
 				
-				enum class PulseAlternative : uint16_t
+				enum class PulseAlternative : int_fast8_t
 				{
 					Default = 0,
 					Alt1, Alt2, Alt3, Alt4, Alt5, Alt6, Alt7, Alt8, Alt9,
 					Alt10, Alt11, Alt12, Alt13, Alt14, Alt15, Alt16, Alt17, Alt18, Alt19,
 					Alt20, Alt21, Alt22, Alt23, Alt24, Alt25,
-					CP = 10000,
-					Square = 10001
+					CP = -2,
+					Square = -1
 				};
 
-				enum class BaseWaveType : uint8_t
+				enum class BaseWaveType : uint_fast8_t
 				{
 					Sine, Saw, Square, ModifiedSineA, ModifiedSineB, ModifiedSawA,
 					SV, DPWM30, DPWM60C, DPWM60P, DPWM60N, DPWM120P, DPWM120N
 				};
 
-				enum class PulseDataKey : uint8_t
+				enum class PulseDataKey : uint_fast8_t
 				{
 					Phase, Dipolar, PulseWidth, UpdateFrequency
 				};
 
 				struct PulseDataValue
 				{
-					enum class PulseDataValueMode : uint8_t
+					enum class PulseDataValueMode : uint_fast8_t
 					{
 						Const, Moving
 					};
@@ -146,7 +146,7 @@ namespace VvvfSimulator::Data::Vvvf
 
 				struct PulseHarmonic
 				{
-					enum class PulseHarmonicType : uint8_t
+					enum class PulseHarmonicType : uint_fast8_t
 					{
 						Sine, Saw, Square
 					};
@@ -161,7 +161,7 @@ namespace VvvfSimulator::Data::Vvvf
 
 				struct DiscreteTimeConfiguration
 				{
-					enum class DiscreteTimeMode : uint8_t
+					enum class DiscreteTimeMode : uint_fast8_t
 					{
 						Left, Middle, Right
 					};
@@ -173,12 +173,12 @@ namespace VvvfSimulator::Data::Vvvf
 
 				struct CarrierWaveConfiguration
 				{
-					enum class CarrierWaveType : uint8_t
+					enum class CarrierWaveType : uint_fast8_t
 					{
 						Triangle, Saw, Sine
 					};
 					
-					enum class CarrierWaveOption : uint8_t
+					enum class CarrierWaveOption : uint_fast8_t
 					{
 						RaiseStart, FallStart, TopStart, BottomStart
 					};
@@ -201,7 +201,7 @@ namespace VvvfSimulator::Data::Vvvf
 			/// Amplitude control
 			struct AmplitudeValue
 			{
-				enum class AmplitudeMode : uint8_t
+				enum class AmplitudeMode : uint_fast8_t
 				{
 					Const, Moving, Table
 				};
@@ -227,7 +227,7 @@ namespace VvvfSimulator::Data::Vvvf
 				{
 					struct RandomValue
 					{
-						enum class RandomValueMode : uint8_t
+						enum class RandomValueMode : uint_fast8_t
 						{
 							Const, Moving
 						};
@@ -244,14 +244,14 @@ namespace VvvfSimulator::Data::Vvvf
 
 				struct CarrierFrequency
 				{
-					enum class CarrierFrequencyMode : uint8_t
+					enum class CarrierFrequencyMode : uint_fast8_t
 					{
 						Const, Moving, Periodic, Table
 					};
 
 					struct VibratoValue
 					{
-						enum class BaseWaveType : uint8_t
+						enum class BaseWaveType : uint_fast8_t
 						{
 							Sine, Triangle, Square, SawUp, SawDown
 						};
@@ -342,7 +342,7 @@ namespace VvvfSimulator::Data::Vvvf
 	using BrakingPattern = Struct::PulseControl;
 
 	// Pulse mode enumeration
-	enum class PulseMode : uint8_t {
+	enum class PulseMode : uint_fast8_t {
 		PWM,
 		Async,
 		CHM,
@@ -351,7 +351,7 @@ namespace VvvfSimulator::Data::Vvvf
 	};
 
 	// Waveform type enumeration
-	enum class WaveForm : uint8_t {
+	enum class WaveForm : uint_fast8_t {
 		Sine,
 		Saw,
 		Square,
