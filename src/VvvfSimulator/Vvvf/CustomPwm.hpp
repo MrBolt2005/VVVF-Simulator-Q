@@ -21,13 +21,19 @@
 
 #pragma once
 
+// Standard Library
 #include <vector>
-#include <cstdint>
+#include <cinttypes>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <memory>
 #include <map>
+// Packages
+#include <QString>
+// Internal
 #include "InternalMath.hpp"
+#include "../Outcome.hpp"
 
 namespace VvvfSimulator::Vvvf::CustomPwm
 {
@@ -55,10 +61,7 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 		explicit CustomPwmTable(const uint8_t* data, size_t size);
 
 		/// Load from file path
-		static std::optional<CustomPwmTable> loadFromFile(const std::string& path);
-
-		/// Load from Qt resource
-		static std::optional<CustomPwmTable> loadFromResource(const std::string& resourcePath);
+		static Outcome::QStringResult<CustomPwmTable> loadFromBin(const QString& path);
 
 		/// Get PWM output level for given modulation index and phase angle
 		/// @param M Modulation index (0.0 - ~1.3)
@@ -89,9 +92,8 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 	};
 
 	/// Preset manager for embedded switch angle tables
-	class CustomPwmPresets
+	namespace CustomPwmPresets
 	{
-	public:
 		/// Preset identifiers matching upstream
 		enum class PresetId
 		{
@@ -154,21 +156,13 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 		};
 
 		/// Get preset table by ID (lazy loading)
-		static std::shared_ptr<CustomPwmTable> getPreset(PresetId id);
+		std::shared_ptr<CustomPwmTable> getPreset(PresetId id);
 
 		/// Preload all presets asynchronously
-		static void preloadAll();
+		void preloadAll();
 
 		/// Check if presets are loaded
-		static bool isLoaded() { return loaded; }
-
-	private:
-		static bool loaded;
-		static bool loading;
-		static std::map<PresetId, std::shared_ptr<CustomPwmTable>> cache;
-
-		static std::string getResourcePath(PresetId id);
-		static void loadPreset(PresetId id);
+		bool isLoaded();
 	};
 
 } // namespace VvvfSimulator::Vvvf::CustomPwm

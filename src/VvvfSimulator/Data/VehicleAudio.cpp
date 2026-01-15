@@ -63,7 +63,18 @@ std::string TrainAudio::HarmonicData::toString() const {
     return oss.str();
 }
 
-void TrainAudio::setCalculatedGearHarmonic(int Gear1, int Gear2) {
+TrainAudio::TrainAudio(const std::filesystem::path &path, RflCppFormats format)
+{
+    auto result = load(path, format);
+    if (result) {
+        *this = result.value();
+    } else {
+        throw std::runtime_error("Failed to load TrainAudio from file: " + result.error().message());
+    }
+}
+
+void TrainAudio::setCalculatedGearHarmonic(int Gear1, int Gear2)
+{
     std::vector<HarmonicData> gearHarmonicsList;
     
     // Calculate rotation frequency

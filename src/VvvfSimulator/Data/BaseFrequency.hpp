@@ -56,7 +56,9 @@ namespace VvvfSimulator::Data
 	BaseFrequency() = default;
 	BaseFrequency(const BaseFrequency& other) = default;
 	BaseFrequency(BaseFrequency&& other) = default;
-	BaseFrequency& operator=(const BaseFrequency& other) = default;
+    BaseFrequency(const std::filesystem::path &path,
+                  RflCppFormats format = RflCppFormats::YAML);
+        BaseFrequency& operator=(const BaseFrequency& other) = default;
 	BaseFrequency& operator=(BaseFrequency&& other) = default;
 	std::string toString() const;
 		
@@ -74,10 +76,23 @@ namespace VvvfSimulator::Data
 	Compiled getCompiled() const;
 
 	/// Compiled/optimized version of base frequency data
+	/// Pre-computes accumulated times and frequencies for efficient runtime queries
 	struct Compiled
 	{
-		// TODO: Add compiled fields as needed
-		std::vector<Point> compiledPoints;
+		/// Compiled point with accumulated time and frequency
+		struct Point
+		{
+			double startTime = 0.0;
+			double endTime = 0.0;
+			double startFrequency = 0.0;
+			double endFrequency = 0.0;
+			bool isPowerOn = true;
+			bool isAccel = true;
+
+			constexpr Point() = default;
+		};
+
+		std::vector<Point> points;
 
 		explicit Compiled(const BaseFrequency& source);
 
@@ -86,8 +101,8 @@ namespace VvvfSimulator::Data
 		/// Get point index at given time using binary search
 		int getPointAtNum(double time) const;
 		
-		/// Get point data at given time
-		std::optional<Point> getPointAtData(double time) const;
+		/// Get compiled point data at given time
+		std::optional<Compiled::Point> getPointAtData(double time) const;
 		
 		/// Get frequency at given time with initial offset
 		double getFreqAt(double time, double initial) const;

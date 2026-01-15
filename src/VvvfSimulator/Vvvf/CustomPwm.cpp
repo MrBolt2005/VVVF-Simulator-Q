@@ -18,10 +18,17 @@
 // Version 1.10.0.0
 
 #include "CustomPwm.hpp"
-#include <fstream>
-#include <cstring>
+// Standard Library
 #include <algorithm>
+#include <atomic>
 #include <cmath>
+#include <cstring>
+#include <fstream>
+// Packages
+#include <QDebug>
+#include <QFile>
+#include <QHash>
+#include <QStringView>
 
 namespace VvvfSimulator::Vvvf::CustomPwm
 {
@@ -70,26 +77,19 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 		}
 	}
 
-	std::optional<CustomPwmTable> CustomPwmTable::loadFromFile(const std::string& path)
+	Outcome::QStringResult<CustomPwmTable> CustomPwmTable::loadFromBin(const QString& path)
 	{
-		std::ifstream file(path, std::ios::binary | std::ios::ate);
-		if (!file) return std::nullopt;
+		QFile file(path);
+		if (!file.open(QIODevice::ReadOnly))
+			return QObject::tr("Failed to open file: %1").arg(file.errorString());
 
-		size_t size = file.tellg();
-		file.seekg(0, std::ios::beg);
+		auto size = file.size();
 
 		std::vector<uint8_t> buffer(size);
 		if (!file.read(reinterpret_cast<char*>(buffer.data()), size))
-			return std::nullopt;
+			return QObject::tr("Failed to read file: %1").arg(file.errorString());
 
 		return CustomPwmTable(buffer.data(), size);
-	}
-
-	std::optional<CustomPwmTable> CustomPwmTable::loadFromResource(const std::string& resourcePath)
-	{
-		// TODO: Implement Qt resource loading
-		// For now, treat as file path
-		return loadFromFile(resourcePath);
 	}
 
 	int CustomPwmTable::getPwm(double M, double X) const
@@ -109,16 +109,16 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 		using namespace InternalMath;
 
 		// Normalize angle to [0, 2π)
-		X = std::fmod(X, Functions::M_2_PI);
-		if (X < 0) X += Functions::M_2_PI;
+		X = std::fmod(X, m_2_PI);
+		if (X < 0) X += m_2_PI;
 
 		// Determine orthant (quadrant in 90° sectors)
-		int orthant = static_cast<int>(X / Functions::M_PI_2);
-		double angle = std::fmod(X, Functions::M_PI_2);
+		int orthant = static_cast<int>(X / m_PI_2);
+		double angle = std::fmod(X, m_PI_2);
 
 		// Mirror angle for odd orthants
 		if (orthant & 0x01) {
-			angle = Functions::M_PI_2 - angle;
+			angle = m_PI_2 - angle;
 		}
 
 		// Find PWM level by comparing with switch angles
@@ -141,114 +141,118 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 
 	// ===== CustomPwmPresets Implementation =====
 
-	bool CustomPwmPresets::loaded = false;
-	bool CustomPwmPresets::loading = false;
-	std::map<CustomPwmPresets::PresetId, std::shared_ptr<CustomPwmTable>> CustomPwmPresets::cache;
+	namespace CustomPwmPresets {
+		namespace {
+			std::atomic<bool> loaded = false;
+			std::atomic<bool> loading = false;
+			QHash<CustomPwmPresets::PresetId, std::shared_ptr<CustomPwmTable>> cache;
+		} // namespace
 
-	std::string CustomPwmPresets::getResourcePath(PresetId id)
-	{
-		// Map preset IDs to resource paths
-		// These will match the embedded Qt resources
-		static const std::map<PresetId, std::string> pathMap = {
-			{PresetId::L2Chm3Default, ":/switchangle/L2Chm3Default.bin"},
-			{PresetId::L2Chm3Alt1, ":/switchangle/L2Chm3Alt1.bin"},
-			{PresetId::L2Chm3Alt2, ":/switchangle/L2Chm3Alt2.bin"},
-			{PresetId::L2Chm5Default, ":/switchangle/L2Chm5Default.bin"},
-			{PresetId::L2Chm5Alt1, ":/switchangle/L2Chm5Alt1.bin"},
-			{PresetId::L2Chm5Alt2, ":/switchangle/L2Chm5Alt2.bin"},
-			{PresetId::L2Chm5Alt3, ":/switchangle/L2Chm5Alt3.bin"},
-			{PresetId::L2Chm7Default, ":/switchangle/L2Chm7Default.bin"},
-			{PresetId::L2Chm7Alt1, ":/switchangle/L2Chm7Alt1.bin"},
-			{PresetId::L2Chm7Alt2, ":/switchangle/L2Chm7Alt2.bin"},
-			{PresetId::L2Chm7Alt3, ":/switchangle/L2Chm7Alt3.bin"},
-			{PresetId::L2Chm7Alt4, ":/switchangle/L2Chm7Alt4.bin"},
-			{PresetId::L2Chm7Alt5, ":/switchangle/L2Chm7Alt5.bin"},
-			{PresetId::L2Chm9Default, ":/switchangle/L2Chm9Default.bin"},
-			{PresetId::L2Chm9Alt1, ":/switchangle/L2Chm9Alt1.bin"},
-			{PresetId::L2Chm9Alt2, ":/switchangle/L2Chm9Alt2.bin"},
-			{PresetId::L2Chm9Alt3, ":/switchangle/L2Chm9Alt3.bin"},
-			{PresetId::L2Chm9Alt4, ":/switchangle/L2Chm9Alt4.bin"},
-			{PresetId::L2Chm9Alt5, ":/switchangle/L2Chm9Alt5.bin"},
-			{PresetId::L2Chm9Alt6, ":/switchangle/L2Chm9Alt6.bin"},
-			{PresetId::L2Chm9Alt7, ":/switchangle/L2Chm9Alt7.bin"},
-			{PresetId::L2Chm9Alt8, ":/switchangle/L2Chm9Alt8.bin"},
-			{PresetId::L2Chm11Default, ":/switchangle/L2Chm11Default.bin"},
-			{PresetId::L2Chm11Alt1, ":/switchangle/L2Chm11Alt1.bin"},
-			{PresetId::L2Chm11Alt2, ":/switchangle/L2Chm11Alt2.bin"},
-			{PresetId::L2Chm11Alt3, ":/switchangle/L2Chm11Alt3.bin"},
-			{PresetId::L2Chm11Alt4, ":/switchangle/L2Chm11Alt4.bin"},
-			{PresetId::L2Chm11Alt5, ":/switchangle/L2Chm11Alt5.bin"},
-			{PresetId::L2Chm11Alt6, ":/switchangle/L2Chm11Alt6.bin"},
-			{PresetId::L2Chm11Alt7, ":/switchangle/L2Chm11Alt7.bin"},
-			{PresetId::L2Chm11Alt8, ":/switchangle/L2Chm11Alt8.bin"},
-			{PresetId::L2Chm11Alt9, ":/switchangle/L2Chm11Alt9.bin"},
-			{PresetId::L2Chm11Alt10, ":/switchangle/L2Chm11Alt10.bin"},
-			{PresetId::L2Chm13Default, ":/switchangle/L2Chm13Default.bin"},
-			{PresetId::L2Chm13Alt1, ":/switchangle/L2Chm13Alt1.bin"},
-			{PresetId::L2Chm13Alt2, ":/switchangle/L2Chm13Alt2.bin"},
-			{PresetId::L2Chm13Alt3, ":/switchangle/L2Chm13Alt3.bin"},
-			{PresetId::L2Chm13Alt4, ":/switchangle/L2Chm13Alt4.bin"},
-			{PresetId::L2Chm13Alt5, ":/switchangle/L2Chm13Alt5.bin"},
-			{PresetId::L2Chm13Alt6, ":/switchangle/L2Chm13Alt6.bin"},
-			{PresetId::L2Chm13Alt7, ":/switchangle/L2Chm13Alt7.bin"},
-			{PresetId::L2Chm13Alt8, ":/switchangle/L2Chm13Alt8.bin"},
-			{PresetId::L2Chm15Default, ":/switchangle/L2Chm15Default.bin"},
-			{PresetId::L2Chm15Alt1, ":/switchangle/L2Chm15Alt1.bin"},
-			{PresetId::L2Chm15Alt2, ":/switchangle/L2Chm15Alt2.bin"},
-			{PresetId::L2Chm15Alt3, ":/switchangle/L2Chm15Alt3.bin"},
-			{PresetId::L2Chm15Alt4, ":/switchangle/L2Chm15Alt4.bin"},
-			{PresetId::L2Chm15Alt5, ":/switchangle/L2Chm15Alt5.bin"},
-			{PresetId::L2Chm15Alt6, ":/switchangle/L2Chm15Alt6.bin"},
-			{PresetId::L2Chm15Alt7, ":/switchangle/L2Chm15Alt7.bin"},
-			{PresetId::L2Chm15Alt8, ":/switchangle/L2Chm15Alt8.bin"},
-			{PresetId::L2Chm15Alt9, ":/switchangle/L2Chm15Alt9.bin"},
-			{PresetId::L2Chm15Alt10, ":/switchangle/L2Chm15Alt10.bin"},
-			{PresetId::L2Chm15Alt11, ":/switchangle/L2Chm15Alt11.bin"},
-			{PresetId::L2Chm15Alt12, ":/switchangle/L2Chm15Alt12.bin"},
-		};
+		QStringView CustomPwmPresets::getResourcePath(PresetId id)
+		{
+			// Map preset IDs to resource paths
+			// These will match the embedded Qt resources
+			static const QHash<PresetId, QStringView> pathMap = {
+				{PresetId::L2Chm3Default, u":/switchangle/L2Chm3Default.bin"},
+				{PresetId::L2Chm3Alt1, u":/switchangle/L2Chm3Alt1.bin"},
+				{PresetId::L2Chm3Alt2, u":/switchangle/L2Chm3Alt2.bin"},
+				{PresetId::L2Chm5Default, u":/switchangle/L2Chm5Default.bin"},
+				{PresetId::L2Chm5Alt1, u":/switchangle/L2Chm5Alt1.bin"},
+				{PresetId::L2Chm5Alt2, u":/switchangle/L2Chm5Alt2.bin"},
+				{PresetId::L2Chm5Alt3, u":/switchangle/L2Chm5Alt3.bin"},
+				{PresetId::L2Chm7Default, u":/switchangle/L2Chm7Default.bin"},
+				{PresetId::L2Chm7Alt1, u":/switchangle/L2Chm7Alt1.bin"},
+				{PresetId::L2Chm7Alt2, u":/switchangle/L2Chm7Alt2.bin"},
+				{PresetId::L2Chm7Alt3, u":/switchangle/L2Chm7Alt3.bin"},
+				{PresetId::L2Chm7Alt4, u":/switchangle/L2Chm7Alt4.bin"},
+				{PresetId::L2Chm7Alt5, u":/switchangle/L2Chm7Alt5.bin"},
+				{PresetId::L2Chm9Default, u":/switchangle/L2Chm9Default.bin"},
+				{PresetId::L2Chm9Alt1, u":/switchangle/L2Chm9Alt1.bin"},
+				{PresetId::L2Chm9Alt2, u":/switchangle/L2Chm9Alt2.bin"},
+				{PresetId::L2Chm9Alt3, u":/switchangle/L2Chm9Alt3.bin"},
+				{PresetId::L2Chm9Alt4, u":/switchangle/L2Chm9Alt4.bin"},
+				{PresetId::L2Chm9Alt5, u":/switchangle/L2Chm9Alt5.bin"},
+				{PresetId::L2Chm9Alt6, u":/switchangle/L2Chm9Alt6.bin"},
+				{PresetId::L2Chm9Alt7, u":/switchangle/L2Chm9Alt7.bin"},
+				{PresetId::L2Chm9Alt8, u":/switchangle/L2Chm9Alt8.bin"},
+				{PresetId::L2Chm11Default, u":/switchangle/L2Chm11Default.bin"},
+				{PresetId::L2Chm11Alt1, u":/switchangle/L2Chm11Alt1.bin"},
+				{PresetId::L2Chm11Alt2, u":/switchangle/L2Chm11Alt2.bin"},
+				{PresetId::L2Chm11Alt3, u":/switchangle/L2Chm11Alt3.bin"},
+				{PresetId::L2Chm11Alt4, u":/switchangle/L2Chm11Alt4.bin"},
+				{PresetId::L2Chm11Alt5, u":/switchangle/L2Chm11Alt5.bin"},
+				{PresetId::L2Chm11Alt6, u":/switchangle/L2Chm11Alt6.bin"},
+				{PresetId::L2Chm11Alt7, u":/switchangle/L2Chm11Alt7.bin"},
+				{PresetId::L2Chm11Alt8, u":/switchangle/L2Chm11Alt8.bin"},
+				{PresetId::L2Chm11Alt9, u":/switchangle/L2Chm11Alt9.bin"},
+				{PresetId::L2Chm11Alt10, u":/switchangle/L2Chm11Alt10.bin"},
+				{PresetId::L2Chm13Default, u":/switchangle/L2Chm13Default.bin"},
+				{PresetId::L2Chm13Alt1, u":/switchangle/L2Chm13Alt1.bin"},
+				{PresetId::L2Chm13Alt2, u":/switchangle/L2Chm13Alt2.bin"},
+				{PresetId::L2Chm13Alt3, u":/switchangle/L2Chm13Alt3.bin"},
+				{PresetId::L2Chm13Alt4, u":/switchangle/L2Chm13Alt4.bin"},
+				{PresetId::L2Chm13Alt5, u":/switchangle/L2Chm13Alt5.bin"},
+				{PresetId::L2Chm13Alt6, u":/switchangle/L2Chm13Alt6.bin"},
+				{PresetId::L2Chm13Alt7, u":/switchangle/L2Chm13Alt7.bin"},
+				{PresetId::L2Chm13Alt8, u":/switchangle/L2Chm13Alt8.bin"},
+				{PresetId::L2Chm15Default, u":/switchangle/L2Chm15Default.bin"},
+				{PresetId::L2Chm15Alt1, u":/switchangle/L2Chm15Alt1.bin"},
+				{PresetId::L2Chm15Alt2, u":/switchangle/L2Chm15Alt2.bin"},
+				{PresetId::L2Chm15Alt3, u":/switchangle/L2Chm15Alt3.bin"},
+				{PresetId::L2Chm15Alt4, u":/switchangle/L2Chm15Alt4.bin"},
+				{PresetId::L2Chm15Alt5, u":/switchangle/L2Chm15Alt5.bin"},
+				{PresetId::L2Chm15Alt6, u":/switchangle/L2Chm15Alt6.bin"},
+				{PresetId::L2Chm15Alt7, u":/switchangle/L2Chm15Alt7.bin"},
+				{PresetId::L2Chm15Alt8, u":/switchangle/L2Chm15Alt8.bin"},
+				{PresetId::L2Chm15Alt9, u":/switchangle/L2Chm15Alt9.bin"},
+				{PresetId::L2Chm15Alt10, u":/switchangle/L2Chm15Alt10.bin"},
+				{PresetId::L2Chm15Alt11, u":/switchangle/L2Chm15Alt11.bin"},
+				{PresetId::L2Chm15Alt12, u":/switchangle/L2Chm15Alt12.bin"},
+			};
 
-		auto it = pathMap.find(id);
-		return (it != pathMap.end()) ? it->second : "";
-	}
-
-	void CustomPwmPresets::loadPreset(PresetId id)
-	{
-		std::string path = getResourcePath(id);
-		if (path.empty()) return;
-
-		auto table = CustomPwmTable::loadFromResource(path);
-		if (table) {
-			cache[id] = std::make_shared<CustomPwmTable>(*table);
-		}
-	}
-
-	std::shared_ptr<CustomPwmTable> CustomPwmPresets::getPreset(PresetId id)
-	{
-		// Check cache first
-		auto it = cache.find(id);
-		if (it != cache.end()) {
-			return it->second;
+			auto it = pathMap.find(id);
+			return (it != pathMap.end()) ? it.value() : QStringView{u""};
 		}
 
-		// Load on demand
-		loadPreset(id);
-		return cache[id]; // May be nullptr if load failed
-	}
+		void CustomPwmPresets::loadPreset(PresetId id)
+		{
+			QStringView path = getResourcePath(id);
+			if (path.empty()) return;
 
-	void CustomPwmPresets::preloadAll()
-	{
-		if (loaded || loading) return;
-		loading = true;
-
-		// Load all presets
-		// In production, this would be done asynchronously
-		for (int i = static_cast<int>(PresetId::L2Chm3Default); 
-		     i <= static_cast<int>(PresetId::L2Chm15Alt12); ++i) {
-			loadPreset(static_cast<PresetId>(i));
+			auto table = CustomPwmTable::loadFromBin(path.toString());
+			if (table) {
+				cache[id] = std::make_shared<CustomPwmTable>(table.value());
+			}
 		}
 
-		loaded = true;
-		loading = false;
+		std::shared_ptr<CustomPwmTable> CustomPwmPresets::getPreset(PresetId id)
+		{
+			// Check cache first
+			auto it = cache.find(id);
+			if (it != cache.end()) {
+				return it.value();
+			}
+
+			// Load on demand
+			loadPreset(id);
+			return cache[id]; // May be nullptr if load failed
+		}
+
+		void CustomPwmPresets::preloadAll()
+		{
+			if (loaded || loading) return;
+			loading = true;
+
+			// Load all presets
+			// TODO: In production, this would be done asynchronously
+			for (int i = static_cast<int>(PresetId::L2Chm3Default); 
+				i <= static_cast<int>(PresetId::L2Chm15Alt12); ++i) {
+				loadPreset(static_cast<PresetId>(i));
+			}
+
+			loaded = true;
+			loading = false;
+		}
 	}
 
 } // namespace VvvfSimulator::Vvvf::CustomPwm

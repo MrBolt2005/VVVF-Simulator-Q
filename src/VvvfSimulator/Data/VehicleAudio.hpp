@@ -105,6 +105,9 @@ struct TrainAudio {
     };
 
     // Main train audio configuration
+    TrainAudio(const std::filesystem::path& path, 
+               RflCppFormats format = RflCppFormats::YAML);
+    TrainAudio() = default;
     std::vector<HarmonicData> GearSound;     // Gear-related harmonics
     std::vector<HarmonicData> HarmonicSound; // Motor harmonics
     bool UseFilters = false;                 // Enable audio filters
