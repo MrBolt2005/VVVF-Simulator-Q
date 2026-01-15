@@ -3,9 +3,9 @@
 // Standard Library
 #include <sstream>
 
-namespace VvvfSimulator::Data::BaseFrequency
+namespace VvvfSimulator::Data
 {
-	std::string Point::toString() const
+	std::string BaseFrequency::Point::toString() const
 	{
 		std::ostringstream oss;
 		oss << "Order: " << order 
@@ -16,10 +16,10 @@ namespace VvvfSimulator::Data::BaseFrequency
 		return oss.str();
 	}
 
-	std::string Struct::toString() const
+	std::string BaseFrequency::toString() const
 	{
 		std::ostringstream oss;
-		oss << "BaseFrequency::Struct { Points: [";
+		oss << "BaseFrequency { Points: [";
 		for (size_t i = 0; i < points.size(); ++i) {
 			if (i > 0) oss << ", ";
 			oss << "{" << points[i].toString() << "}";
@@ -28,7 +28,7 @@ namespace VvvfSimulator::Data::BaseFrequency
 		return oss.str();
 	}
 
-	double Struct::getEstimatedSteps(double sampleTime) const
+	double BaseFrequency::getEstimatedSteps(double sampleTime) const
 	{
 		double totalDuration = 0.0;
 		for (const auto& point : points) {
@@ -38,20 +38,20 @@ namespace VvvfSimulator::Data::BaseFrequency
 		return totalDuration / sampleTime;
 	}
 
-	Struct::StructCompiled Struct::getCompiled() const
+	BaseFrequency::Compiled BaseFrequency::getCompiled() const
 	{
-		return StructCompiled(*this);
+		return Compiled(*this);
 	}
 
-	Struct::StructCompiled::StructCompiled(const Struct& source)
+	BaseFrequency::Compiled::Compiled(const BaseFrequency& source)
 		: compiledPoints(source.points)
 	{
 		// Future optimization: pre-compute interpolation coefficients, etc.
 	}
 
-	// ===== StructCompiled Analysis Methods (ex-Analyze) =====
+	// ===== Compiled Analysis Methods (ex-Analyze) =====
 
-	int Struct::StructCompiled::getPointAtNum(double time) const
+	int BaseFrequency::Compiled::getPointAtNum(double time) const
 	{
 		// Calculate cumulative times to find the point
 		double cumulativeTime = 0.0;
@@ -65,7 +65,7 @@ namespace VvvfSimulator::Data::BaseFrequency
 		return -1; // Out of range
 	}
 
-	std::optional<Point> Struct::StructCompiled::getPointAtData(double time) const
+	std::optional<BaseFrequency::Point> BaseFrequency::Compiled::getPointAtData(double time) const
 	{
 		int index = getPointAtNum(time);
 		if (index < 0 || static_cast<size_t>(index) >= compiledPoints.size())
@@ -73,7 +73,7 @@ namespace VvvfSimulator::Data::BaseFrequency
 		return compiledPoints[index];
 	}
 
-	double Struct::StructCompiled::getFreqAt(double time, double initial) const
+	double BaseFrequency::Compiled::getFreqAt(double time, double initial) const
 	{
 		auto pointOpt = getPointAtData(time);
 		if (!pointOpt)

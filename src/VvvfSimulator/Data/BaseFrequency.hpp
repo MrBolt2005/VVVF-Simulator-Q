@@ -26,8 +26,9 @@
 // Internal
 #include "Util.hpp"
 
-namespace VvvfSimulator::Data::BaseFrequency
+namespace VvvfSimulator::Data
 {
+	struct BaseFrequency {
 	/// Point in base frequency control pattern
 	struct Point
 	{
@@ -46,33 +47,29 @@ namespace VvvfSimulator::Data::BaseFrequency
 	};
 
 	/// Base frequency control data structure
-	struct Struct
-	{
-		std::vector<Point> points;
+	std::vector<Point> points;
 
-		Struct() = default;
-		Struct(const Struct& other) = default;
-		Struct(Struct&& other) = default;
-		Struct& operator=(const Struct& other) = default;
-		Struct& operator=(Struct&& other) = default;
-
-		std::string toString() const;
+	BaseFrequency() = default;
+	BaseFrequency(const BaseFrequency& other) = default;
+	BaseFrequency(BaseFrequency&& other) = default;
+	BaseFrequency& operator=(const BaseFrequency& other) = default;
+	BaseFrequency& operator=(BaseFrequency&& other) = default;
+	std::string toString() const;
 		
-		/// Get estimated number of simulation steps for given sample time
-		double getEstimatedSteps(double sampleTime) const;
+	/// Get estimated number of simulation steps for given sample time
+	double getEstimatedSteps(double sampleTime) const;
 		
-		// Forward declaration for compiled structure
-		struct StructCompiled;
-		StructCompiled getCompiled() const;
-	};
+	// Forward declaration for compiled structure
+	struct Compiled;
+	Compiled getCompiled() const;
 
 	/// Compiled/optimized version of base frequency data
-	struct Struct::StructCompiled
+	struct Compiled
 	{
 		// TODO: Add compiled fields as needed
 		std::vector<Point> compiledPoints;
 
-		explicit StructCompiled(const Struct& source);
+		explicit Compiled(const BaseFrequency& source);
 
 		// ===== Analysis Methods (ex-Analyze) =====
 		
@@ -90,5 +87,6 @@ namespace VvvfSimulator::Data::BaseFrequency
 
 	// Backward compatibility aliases
 	using YamlMasconDataPoint = Point;
-	using YamlMasconData = Struct;
+	using YamlMasconData = BaseFrequency;
+	};
 }
