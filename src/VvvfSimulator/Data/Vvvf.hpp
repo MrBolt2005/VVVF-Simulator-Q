@@ -16,7 +16,7 @@
    limitations under the License.
 */
 
-// Data/Vvvf/Struct.hpp
+// Data/Vvvf.hpp
 // Version 1.10.0.0
 
 // Standard Library
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 // Internal
-#include "../Util.hpp"
+#include "Util.hpp"
 
 namespace VvvfSimulator::Data
 {
@@ -166,7 +166,7 @@ namespace VvvfSimulator::Data
                 enum class PulseDataKey : uint_fast8_t
                 {
                     Phase,
-                    Dipolar,
+                    Bipolar,
                     PulseWidth,
                     UpdateFrequency
                 };
@@ -388,8 +388,8 @@ namespace VvvfSimulator::Data
         /// Check if frequency is in async mode range
         bool isAsyncMode(double controlFrequency) const;
 
-        /// Calculate dipolar value at frequency
-        int getDipolar(double controlFrequency) const;
+        /// Calculate bipolar value at frequency
+        int getBipolar(double controlFrequency) const;
 
         // Pulse mode enumeration
         enum class PulseMode : uint_fast8_t
@@ -425,7 +425,7 @@ namespace VvvfSimulator::Data
             WaveForm waveForm = WaveForm::Sine;
             double amplitude = 0.0;
             double carrierFrequency = 0.0;
-            int dipolar = 3;
+            int bipolar = 3;
             PulseMode pulseMode = PulseMode::PWM;
         };
 

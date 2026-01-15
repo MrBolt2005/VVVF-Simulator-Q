@@ -1,4 +1,4 @@
-#include "Struct.hpp"
+#include "Vvvf.hpp"
 
 // Standard Library
 #include <algorithm>
@@ -99,12 +99,12 @@ namespace VvvfSimulator::Data
                 data.carrierFrequency = pattern.asyncModulationData.carrierWaveData.constant; // TODO: Calculate
             }
             
-            // Get dipolar from pulse data or use default
-            auto dipolarIt = pattern.pulseMode.pulseData.find(PulseControl::Pulse::PulseDataKey::Dipolar);
-            if (dipolarIt != pattern.pulseMode.pulseData.end()) {
-                data.dipolar = static_cast<int>(dipolarIt->second.constant);
+            // Get bipolar from pulse data or use default
+            auto bipolarIt = pattern.pulseMode.pulseData.find(PulseControl::Pulse::PulseDataKey::Bipolar);
+            if (bipolarIt != pattern.pulseMode.pulseData.end()) {
+                data.bipolar = static_cast<int>(bipolarIt->second.constant);
             } else {
-                data.dipolar = 3; // Default
+                data.bipolar = 3; // Default
             }
             
             // Map pulse type to pulse mode
@@ -135,7 +135,7 @@ namespace VvvfSimulator::Data
             data.waveForm = WaveForm::Sine;
             data.amplitude = 0.0;
             data.carrierFrequency = 0.0;
-            data.dipolar = 3;
+            data.bipolar = 3;
             data.pulseMode = PulseMode::PWM;
         }
         return data;
@@ -216,8 +216,8 @@ namespace VvvfSimulator::Data
         return brakePattern && brakePattern->pulseMode.pulseType == PulseControl::Pulse::PulseTypeName::ASYNC;
     }
 
-    int Vvvf::getDipolar(double controlFrequency) const
+    int Vvvf::getBipolar(double controlFrequency) const
     {
-        return getControlFrequencyData(controlFrequency).dipolar;
+        return getControlFrequencyData(controlFrequency).bipolar;
     }
 }
