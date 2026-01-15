@@ -20,9 +20,14 @@
 // Version 1.10.0.0 - Train audio configuration
 
 #include <cstdint>
-#include "Util.hpp"
 #include <vector>
 #include <string>
+#include <filesystem>
+// Internal
+#include "Util.hpp"
+#include "RflCppFormats.hpp"
+// Packages
+#include <rfl/Result.hpp>
 
 namespace VvvfSimulator::Data {
 struct TrainAudio {
@@ -118,6 +123,12 @@ struct TrainAudio {
 
     // Load default impulse response from resources
     void loadDefaultImpulseResponse();
+
+    /// Save to file with specified format
+    rfl::Result<rfl::Nothing> save(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML) const;
+
+    /// Load from file with specified format
+    static rfl::Result<TrainAudio> load(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML);
 
     // Resample impulse response to target sample rate
     std::vector<float> getImpulseResponse(int targetSampleRate) const;

@@ -21,12 +21,16 @@
 
 // Standard Library
 #include <cinttypes>
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <string>
 #include <vector>
 // Internal
 #include "Util.hpp"
+#include "RflCppFormats.hpp"
+// Packages
+#include <rfl/Result.hpp>
 
 namespace VvvfSimulator::Data
 {
@@ -390,7 +394,11 @@ namespace VvvfSimulator::Data
 
         /// Calculate bipolar value at frequency
         int getBipolar(double controlFrequency) const;
+        /// Save to file with specified format
+        rfl::Result<rfl::Nothing> save(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML) const;
 
+        /// Load from file with specified format
+        static rfl::Result<Vvvf> load(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML);
         // Pulse mode enumeration
         enum class PulseMode : uint_fast8_t
         {

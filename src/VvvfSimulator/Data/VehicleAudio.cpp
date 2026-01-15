@@ -18,6 +18,7 @@
 // Version 1.10.0.0
 
 #include "VehicleAudio.hpp"
+#include "Serialization.hpp"
 #include <sstream>
 #include <cmath>
 
@@ -122,6 +123,18 @@ std::vector<float> TrainAudio::getImpulseResponse(int targetSampleRate) const {
     // TODO: Implement resampling when audio generation is integrated
     // For now, return the original response
     return ImpulseResponse;
+}
+
+// ===== Serialization Methods =====
+
+rfl::Result<rfl::Nothing> TrainAudio::save(const std::filesystem::path& path, RflCppFormats format) const
+{
+    return Serialization::save(*this, path, format);
+}
+
+rfl::Result<TrainAudio> TrainAudio::load(const std::filesystem::path& path, RflCppFormats format)
+{
+    return Serialization::load<TrainAudio>(path, format);
 }
 
 } // namespace VvvfSimulator::Data

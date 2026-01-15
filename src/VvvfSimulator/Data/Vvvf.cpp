@@ -1,4 +1,5 @@
 #include "Vvvf.hpp"
+#include "Serialization.hpp"
 
 // Standard Library
 #include <algorithm>
@@ -219,5 +220,17 @@ namespace VvvfSimulator::Data
     int Vvvf::getBipolar(double controlFrequency) const
     {
         return getControlFrequencyData(controlFrequency).bipolar;
+    }
+
+    // ===== Serialization Methods =====
+
+    rfl::Result<rfl::Nothing> Vvvf::save(const std::filesystem::path& path, RflCppFormats format) const
+    {
+        return Serialization::save(*this, path, format);
+    }
+
+    rfl::Result<Vvvf> Vvvf::load(const std::filesystem::path& path, RflCppFormats format)
+    {
+        return Serialization::load<Vvvf>(path, format);
     }
 }

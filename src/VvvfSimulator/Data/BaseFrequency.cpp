@@ -1,4 +1,5 @@
 #include "BaseFrequency.hpp"
+#include "Serialization.hpp"
 
 // Standard Library
 #include <sstream>
@@ -93,5 +94,17 @@ namespace VvvfSimulator::Data
 		double frequency = point.rate * elapsedInPoint;
 		
 		return frequency + initial;
+	}
+
+	// ===== Serialization Methods =====
+
+	rfl::Result<rfl::Nothing> BaseFrequency::save(const std::filesystem::path& path, RflCppFormats format) const
+	{
+		return Serialization::save(*this, path, format);
+	}
+
+	rfl::Result<BaseFrequency> BaseFrequency::load(const std::filesystem::path& path, RflCppFormats format)
+	{
+		return Serialization::load<BaseFrequency>(path, format);
 	}
 }

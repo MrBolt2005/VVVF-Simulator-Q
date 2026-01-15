@@ -20,11 +20,15 @@
 // Version 1.10.0.0
 
 // Standard Library
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
 // Internal
 #include "Util.hpp"
+#include "RflCppFormats.hpp"
+// Packages
+#include <rfl/Result.hpp>
 
 namespace VvvfSimulator::Data
 {
@@ -58,6 +62,12 @@ namespace VvvfSimulator::Data
 		
 	/// Get estimated number of simulation steps for given sample time
 	double getEstimatedSteps(double sampleTime) const;
+
+	/// Save to file with specified format
+	rfl::Result<rfl::Nothing> save(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML) const;
+
+	/// Load from file with specified format
+	static rfl::Result<BaseFrequency> load(const std::filesystem::path& path, RflCppFormats format = RflCppFormats::YAML);
 		
 	// Forward declaration for compiled structure
 	struct Compiled;
