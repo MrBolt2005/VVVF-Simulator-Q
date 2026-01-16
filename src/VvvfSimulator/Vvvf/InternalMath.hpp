@@ -1,155 +1,78 @@
-#ifndef INTERNALMATH_HPP
-#define INTERNALMATH_HPP
+#pragma once
 
-/*
-   Copyright © 2025 VvvfGeeks, VVVF Systems
-   
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+// Copyright © 2025 VvvfGeeks, VVVF Systems
+// SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
+//
+// Vvvf/InternalMath.hpp
 
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-
-// InternalMath.hpp
-// Version 1.9.1.1
-
-// Internal Includes
-#include "Namespace_VVVF.h"
-// Standard Library Includes
-#include <algorithm>
-#include <cinttypes>
+// Standard Library
 #include <cmath>
 #include <functional>
 #include <span>
-#include <type_traits>
-// Package Includes
+// Packages
 #include <QPointF>
+// Internal
+// #include "Namespace_VVVF.h"
 
-namespace NAMESPACE_VVVF::InternalMath
-{
-	constexpr double m_2_PI    = M_2_PI;        // 0.63661977236
-	constexpr double m_1_PI    = M_1_PI;        // 0.31830988618
-	constexpr double m_1_2PI   = 0.15915494309;
-	constexpr double m_2PI     = 6.28318530717;
-	constexpr double m_PI      = M_PI;          // 3.14159265358
-	constexpr double m_PI_2    = M_PI_2;        // 1.57079632679
-	constexpr double m_PI_3    = 1.04719755119;
-	constexpr double m_PI_4    = 0.78539816339; // M_PI_4
-	constexpr double m_PI_6    = 0.52359877559;
-	constexpr double m_PI_180  = 0.01745329251;
+namespace VvvfSimulator::Vvvf::InternalMath {
+constexpr double m_2_PI = 0.63661977236758134307553505349006;
+constexpr double m_1_PI = 0.31830988618379067153776752674503;
+constexpr double m_1_2PI = 0.15915494309189533576888376337251;
 
-	constexpr double m_SQRT3   = 1.73205080757;
-	constexpr double m_SQRT3_2 = 0.86602540378;
+constexpr double m_4PI_3 = 4.1887902047863909846168578443727;
 
-	constexpr double m_E       = M_E;           // 2.71828182846
+constexpr double m_2PI = 6.283185307179586476925286766559;
+constexpr double m_2PI_3 = 2.0943951023931954923084289221863;
 
-	namespace Functions
-	{
-		double triangle(double x);
-		double saw(double x);
-		inline auto sine(auto x)
-		{ return std::sin(x); }
-		double square(double x);
-		inline auto cosine(auto x)
-		{ return std::cos(x); }
-		double modifiedSine(double x, double level);
-		double modifiedSaw(double x);
+constexpr double m_PI = 3.1415926535897932384626433832795;
+constexpr double m_PI_2 = 1.5707963267948966192313216916398;
+constexpr double m_PI_3 = 1.0471975511965977461542144610932;
+constexpr double m_PI_4 = 0.78539816339744830961566084581988;
+constexpr double m_PI_6 = 0.52359877559829887307710723054658;
+constexpr double m_PI_12 = 0.26179938779914943653855361527329;
+constexpr double m_PI_180 = 0.01745329251994329576923690768489;
 
-		template <typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
-		constexpr T iPow(T base, T exp)
-		{
-			T result = 1;
-			if (exp > 0)
-			{
-				for (T i = 0; i < exp; i++)
-					result *= base;
-			}
-			else if (exp < 0)
-			{
-				for (T i = 0; i > exp; i--)
-					result /= base;
-			}
-			// else
-			return result; // 1
-		}
+constexpr double m_SQRT3 = 1.7320508075688772935274463415059;
+constexpr double m_SQRT3_2 = 0.86602540378443864676372317075294;
 
-		template <typename T, std::enable_if_t<std::is_integral_v<T>, bool> = true>
-		constexpr T iLog2(T x)
-		{
-			T result = 0;
-			while (x >>= 1) result++;
-			return result;
-		}
-	
-		// Batched functions
-		template <typename T>
-		QVector<T> sineBatch(const std::span<T> &x);
+namespace Functions {
+double triangle(double x) noexcept;
+double saw(double x) noexcept;
+inline auto sine(auto x) { return std::sin(x); }
+inline auto cosine(auto x) { return std::cos(x); }
+inline auto arcSine(auto x) { return std::asin(x); }
+double square(double x) noexcept;
+} // namespace Functions
 
-		template <class ForwardIt, class T>
-		inline void iotaVariableStep(ForwardIt first, ForwardIt last, T value, T step)
-		{
-			while (first != last)
-			{
-				*(first++) = value;
-				value += step;
-			}
-		}
-	}
+namespace EquationSolver {
+typedef std::function<double(double)> Function;
 
-	namespace EquationSolver
-	{
-		using Function = std::function<double(double)>;
-		enum class EquationSolverType
-		{
-			Newton, Bissection
-		};
+struct NewtonMethod {
+  Function function;
+  double dx{};
 
-		class NewtonMethod
-		{
-			inline double getDerivative(double x);
+  NewtonMethod() = default;
+  NewtonMethod(const Function &func, double Dx) : function(func), dx(Dx) {}
+  NewtonMethod(Function &&func, double Dx) : function(func), dx(Dx) {}
+  
+  double operator()(double begin, double tolerance, unsigned int n);
+};
 
-			inline double getZeroIntersect(double x);
+struct BisectionMethod {
+  Function function;
 
-		public:
-			Function function;
-			double dx{};
-			NewtonMethod(Function fun, double d) : function(fun), dx(d) {}
+  BisectionMethod() = default;
+  BisectionMethod(const Function &func) : function(func) {}
+  BisectionMethod(Function &&func) : function(func) {}
 
-			double operator()(double begin, double tolerance, unsigned n); 
-		};
+  double operator()(double x0, double x1, double tolerance, unsigned int n);
+};
+} // namespace EquationSolver
 
-		struct BisectionMethod
-		{
-			Function function;
-			BisectionMethod(Function fun) : function(fun) {}
+double lagrangePolynomial(double x, const std::span<QPointF> &points);
 
-			double operator()(double x0, double x1, double tolerance, unsigned N);
-		};
-
-		double lagrangePolynomial(double x, const std::span<QPointF>& points);
-	}
-
-	//
-	// Point operations
-	//
-
-	QPointF norm(const QPointF& point);
-	QPointF rotate(const QPointF& point, double angleRad);
-	constexpr QPointF max(const QPointF& p1, const QPointF& p2)
-	{
-		return QPointF(std::max(p1.x(), p2.x()), std::max(p1.y(), p2.y()));
-	}
-	constexpr QPointF min(const QPointF& p1, const QPointF& p2)
-	{
-		return QPointF(std::min(p1.x(), p2.x()), std::min(p1.y(), p2.y()));
-	}
-}
-
-#endif // INTERNALMATH_HPP
+QPointF norm(const QPointF &pt);
+QPointF rotate(const QPointF &pt, double angle);
+QPointF max(const QPointF &a, const QPointF &b);
+QPointF min(const QPointF &a, const QPointF &b);
+} // namespace VvvfSimulator::Vvvf::InternalMath
