@@ -62,6 +62,8 @@ namespace VvvfSimulator::Vvvf::CustomPwm
 
 		/// Load from file path
 		static Outcome::QStringResult<CustomPwmTable> loadFromBin(const QString& path);
+		static Outcome::QStringResult<CustomPwmTable> loadFromRfl(const QString& path);
+		explicit CustomPwmTable(const QString& path, bool fromBin);
 
 		/// Get PWM output level for given modulation index and phase angle
 		/// @param M Modulation index (0.0 - ~1.3)

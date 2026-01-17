@@ -137,4 +137,6 @@ struct TrainAudio {
     std::vector<float> getImpulseResponse(int targetSampleRate) const;
 };
 
+using VehicleAudio = TrainAudio;
+
 } // namespace VvvfSimulator::Data
