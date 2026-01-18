@@ -22,7 +22,7 @@ namespace VvvfSimulator::Vvvf {
   // TODO: Replace by actual DeltaSigma header include
   namespace Modulation { struct DeltaSigma; } 
 struct Model {
-  Model() = default;
+  constexpr Model() = default;
 
 #pragma region ControlParameter
   double controlFrequency = 0.0;

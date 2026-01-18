@@ -1,0 +1,136 @@
+#pragma once
+
+// Copyright © 2026 VvvfGeeks, VVVF Systems
+// SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
+//
+// Generation/FFmpegProcess/Options.hpp
+// v1.10.0.0
+
+// Standard Library
+#include <optional>
+#include <set>
+// Packages
+#include <QMap>
+#include <QObject>
+// Internal
+#include "../Outcome.hpp"
+#include "ProcessData.hpp"
+
+namespace VvvfSimulator::Generation::FFmpegProcess::Options {
+    class EncoderOptions {
+        Q_OBJECT
+
+        friend class EncoderOptionsPrivate;
+
+    public:
+        enum class EncoderType {
+            Video,
+            Audio,
+            Subtitle
+        };
+
+        /*
+        @brief Tries to read the list of encoders supported by an FFmpeg
+        executable.
+        @returns If succesful, the list of available encoders.
+        If not, if the error code is positive, it is a QProcess::ProcessError.
+        If negative, then it is:
+        * -1: Can not read lines from the FFmpeg process's standard output.
+        * -2: The process's standard output is misformatted.
+        */
+        static Outcome::ErrnoResult<std::set<EncoderOptions>>
+        loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+        static Outcome::ErrnoResult<std::optional<EncoderOptions>>
+        loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                        const QByteArrayView &name);
+
+        QByteArray name() const;
+        QByteArray description() const;
+        EncoderType type() const;
+        bool supportsFrameLevelMultiThreading() const;
+        bool supportsSliceLevelMultiThreading() const;
+        bool experimental() const;
+        bool supportsDrawHorizontalBand() const;
+        bool supportsDRM1() const;
+
+        bool operator<(const EncoderOptions &rhs) const;
+    
+    private:
+        QByteArray m_name, m_desc;
+        EncoderType m_type;
+        int m_frameLevelMT:1;
+        int m_sliceLevelMT:1;
+        int m_experimental:1;
+        int m_drawHorizBand:1;
+        int m_drm1:1;
+    };
+
+    class FormatOptions {
+        Q_OBJECT
+
+        friend class FormatOptionsPrivate;
+
+    public:
+        /*
+        @brief Tries to read the list of encoders supported by an FFmpeg
+        executable.
+        @returns If succesful, the list of available encoders.
+        If not, if the error code is positive, it is a QProcess::ProcessError.
+        If negative, then it is:
+        * -1: Can not read lines from the FFmpeg process's standard output.
+        * -2: The process's standard output is misformatted.
+        */
+        static Outcome::ErrnoResult<std::set<FormatOptions>>
+        loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+        static Outcome::ErrnoResult<std::optional<FormatOptions>>
+        loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                        const QByteArrayView &name);
+    
+    private:
+        QByteArray m_name, m_desc;
+        bool m_demuxer;
+        bool m_muxer;
+    };
+
+    // Bitstream filters are just characterized by name
+
+    class PixelFormatOptions {
+        Q_OBJECT
+
+        friend class PixelFormatOptionsPrivate;
+
+    public:
+        QByteArray name() const;
+        bool supportedInputForConversion() const;
+        bool supportedOutputForConversion() const;
+        bool hardwareAccelerated() const;
+        bool paletted() const;
+        bool bitstreamFormat() const;
+        QList<int> bitDepths() const;
+
+    private:
+        QByteArray name;
+        int m_supportedInput:1;
+        int m_supportedOutput:1;
+        int m_hwAccel:1;
+        int m_paletted:1;
+        int m_bitstream:1;
+        int m_nbComponents;
+        int m_bpp;
+        QList<int> m_bitDepths;
+    };
+
+    class SampleFormatOptions {
+        Q_OBJECT
+
+        friend class SampleFormatOptionsPrivate;
+
+    public:
+        QByteArray name() const;
+        int bitDepth() const;
+
+    private:
+        QByteArray m_name;
+        int m_depth;
+    };
+}
