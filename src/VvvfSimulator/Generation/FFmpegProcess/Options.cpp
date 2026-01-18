@@ -2,12 +2,12 @@
 // Standard Library
 #include <memory>
 
-#define STRONG_COMPARE_RETURN(attrib) \
-if (##attrib < rhs.##attrib) return true;
+// #define STRONG_COMPARE_RETURN(attrib) \
+// if (##attrib < rhs.##attrib) return true;
 
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
     namespace {
-        Outcome::ErrnoResult<std::unique_ptr<QProcess>> tryOneShot(const std::filesystem::path &path, const QStringList &arguments)
+        std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path, const QStringList &arguments)
         {
             auto proc = std::make_unique<QProcess>();
 
@@ -39,27 +39,45 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
             };
 
         fail:
-            return errCode;
+            std::string_view what;
+            switch (errCode) {
+            case QProcess::FailedToStart:
+                what = "The process failed to start.";
+            break;
+            case QProcess::Crashed:
+                what = "The process crashed some time after starting successfully.";
+            break;
+            case QProcess::Timedout:
+                what = "The last process wait timed out.";
+            break;
+            case QProcess::WriteError:
+                what = "An error occurred when attempting to write to the process.";
+            break;
+            case QProcess::ReadError:
+                what = "An error occurred when attempting to read from the process.";
+            break;
+            default:
+                what = "An unknown error occurred.";
+            }
+            throw std::runtime_error(what.data());
         }
     } // anonymous namespace
     
-    Outcome::ErrnoResult<std::set<EncoderOptions>> EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc)
+    std::set<EncoderOptions> EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc)
     {
-        auto res = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-encoders")});
-        if (res.has_error())
-            return res.error();
-        // Q_ASSERT(!res.has_lost_consistency());
-        // Q_ASSERT(res.has_value());
+        auto resProc = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-encoders")});
         
         // Seek separator line, which contains only the '-' character
-        auto &resProc = res.value();
         QByteArray line;
         bool loop;
         do {
             loop = false;
 
             if (!resProc->canReadLine())
-                return -1;
+                throw std::runtime_error(
+                    qPrintable(resProc->errorString().prepend(
+                        "Can not read line(s) from the process's "
+                        "standard output: ")));
             line = resProc->readLine().trimmed();
             for (const auto &c : line)
                 if (c != '-')
@@ -83,7 +101,9 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
 
             // Length check
             if (flags.size() < 6)
-                return -2;
+                throw std::runtime_error(
+                    "The process's standard output is misformatted: failed to "
+                    "parse encoder option flags.");
 
             switch (flags[0]) {
             case 'V':
@@ -96,7 +116,9 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
                 options.m_type = EncoderType::Subtitle;
             break;
             default:
-                return -2;
+                throw std::runtime_error(
+                    "The process's standard output is misformatted: failed to "
+                    "parse encoder option type.");
             }
             options.m_frameLevelMT  = flags[1] == 'F' ? 1 : 0;
             options.m_sliceLevelMT  = flags[2] == 'S' ? 1 : 0;
@@ -120,17 +142,16 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         return retVal;
     }
 
-    Outcome::ErrnoResult<std::optional<EncoderOptions>> EncoderOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc, const QByteArrayView &name)
+    std::optional<EncoderOptions> EncoderOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc, const QByteArrayView &name)
     {
         auto allNames = loadAllFromProcess(proc);
-        if (allNames.has_error())
-            return allNames.error();
         auto found = std::lower_bound(
-            allNames.value().cbegin(),
-            allNames.value().cend(),
-            ([](const auto &l, const auto &r) { return l.m_name == r.m_name; })
+            allNames.cbegin(),
+            allNames.cend(),
+            name,
+            ([](const EncoderOptions &l, const QByteArrayView &r) { return l.m_name < r; })
         );
-        if (found == allNames.value().cend())
+        if (found == allNames.cend())
             return std::nullopt;
         if (found->m_name != name)
             return std::nullopt;
@@ -179,34 +200,32 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
 
     bool EncoderOptions::operator<(const EncoderOptions &rhs) const
     {
-        STRONG_COMPARE_RETURN(m_name)
-        STRONG_COMPARE_RETURN(m_desc)
-        STRONG_COMPARE_RETURN(m_type)
-        STRONG_COMPARE_RETURN(m_frameLevelMT)
-        STRONG_COMPARE_RETURN(m_sliceLevelMT)
-        STRONG_COMPARE_RETURN(m_experimental)
-        STRONG_COMPARE_RETURN(m_drawHorizBand)
-        STRONG_COMPARE_RETURN(m_drm1)
+        if (m_name < rhs.m_name) return true;
+        if (m_desc < rhs.m_desc) return true;
+        if (m_type < rhs.m_type) return true;
+        if (m_frameLevelMT < rhs.m_frameLevelMT) return true;
+        if (m_sliceLevelMT < rhs.m_sliceLevelMT) return true;
+        if (m_experimental < rhs.m_experimental) return true;
+        if (m_drawHorizBand < rhs.m_drawHorizBand) return true;
+        if (m_drm1 < rhs.m_drm1) return true;
         return false;
     }
 
-    Outcome::ErrnoResult<std::set<FormatOptions>> FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc)
+    std::set<FormatOptions> FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc)
     {
-        auto res = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-formats")});
-        if (res.has_error())
-            return res.error();
-        // Q_ASSERT(!res.has_lost_consistency());
-        // Q_ASSERT(res.has_value());
+        auto resProc = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-formats")});
         
         // Seek separator line, which contains only the '-' character
-        auto &resProc = res.value();
         QByteArray line;
         bool loop;
         do {
             loop = false;
 
             if (!resProc->canReadLine())
-                return -1;
+                throw std::runtime_error(
+                    qPrintable(resProc->errorString().prepend(
+                        "Can not read line(s) from the process's "
+                        "standard output: ")));
             line = resProc->readLine().trimmed();
             for (const auto &c : line)
                 if (c != '-')
@@ -230,8 +249,10 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
 
             // Length check
             if (flags.size() < 2)
-                return -2;
-            
+                throw std::runtime_error(
+                    "The process's standard output is misformatted: failed to "
+                    "parse format option flags.");
+
             options.m_demuxer = flags.contains('D') ? 1 : 0;
             options.m_muxer   = flags.contains('E') ? 1 : 0;
             // Skip 1st word
@@ -251,20 +272,48 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         return retVal;
     }
 
-    Outcome::ErrnoResult<std::optional<FormatOptions>> FormatOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc, const QByteArrayView &name)
+    std::optional<FormatOptions> FormatOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc, const QByteArrayView &name)
     {
         auto allNames = loadAllFromProcess(proc);
-        if (allNames.has_error())
-            return allNames.error();
         auto found = std::lower_bound(
-            allNames.value().cbegin(),
-            allNames.value().cend(),
-            ([](const auto &l, const auto &r) { return l.m_name == r.m_name; })
+            allNames.cbegin(),
+            allNames.cend(),
+            name,
+            ([](const FormatOptions &l, const QByteArrayView &r) { return l.m_name < r; })
         );
-        if (found == allNames.value().cend())
+        if (found == allNames.cend())
             return std::nullopt;
         if (found->m_name != name)
             return std::nullopt;
         return *found;
+    }
+
+    QByteArray FormatOptions::name() const
+    {
+        return m_name;
+    }
+
+    QByteArray FormatOptions::description() const
+    {
+        return m_desc;
+    }
+
+    bool FormatOptions::supportsDemux() const
+    {
+        return m_demuxer;
+    }
+
+    bool FormatOptions::supportsMux() const
+    {
+        return m_muxer;
+    }
+
+    bool FormatOptions::operator<(const FormatOptions &rhs) const
+    {
+        if (m_name < rhs.m_name) return true;
+        if (m_desc < rhs.m_desc) return true;
+        if (m_demuxer < rhs.m_demuxer) return true;
+        if (m_muxer < rhs.m_muxer) return true;
+        return false;
     }
 }

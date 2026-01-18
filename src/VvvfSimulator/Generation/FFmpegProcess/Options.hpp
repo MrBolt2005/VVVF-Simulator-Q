@@ -18,7 +18,7 @@
 
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
     class EncoderOptions {
-        Q_OBJECT
+        Q_GADGET
 
         friend class EncoderOptionsPrivate;
 
@@ -32,15 +32,12 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         /*
         @brief Tries to read the list of encoders supported by an FFmpeg
         executable.
-        @returns If succesful, the list of available encoders.
-        If not, if the error code is positive, it is a QProcess::ProcessError.
-        If negative, then it is:
-        * -1: Can not read lines from the FFmpeg process's standard output.
-        * -2: The process's standard output is misformatted.
+        @returns The list of available encoders.
+        @throws std::bad_alloc, std::runtime_error...
         */
-        static Outcome::ErrnoResult<std::set<EncoderOptions>>
+        static std::set<EncoderOptions>
         loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
-        static Outcome::ErrnoResult<std::optional<EncoderOptions>>
+        static std::optional<EncoderOptions>
         loadFromProcess(const FFmpegProcess::ProcessData &proc,
                         const QByteArrayView &name);
 
@@ -53,6 +50,9 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         bool supportsDrawHorizontalBand() const;
         bool supportsDRM1() const;
 
+        /*
+        @brief Strong ordering comparator
+        */
         bool operator<(const EncoderOptions &rhs) const;
     
     private:
@@ -66,7 +66,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
     };
 
     class FormatOptions {
-        Q_OBJECT
+        Q_GADGET
 
         friend class FormatOptionsPrivate;
 
@@ -74,17 +74,27 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         /*
         @brief Tries to read the list of encoders supported by an FFmpeg
         executable.
-        @returns If succesful, the list of available encoders.
+        @returns The list of available formats.
         If not, if the error code is positive, it is a QProcess::ProcessError.
         If negative, then it is:
         * -1: Can not read lines from the FFmpeg process's standard output.
         * -2: The process's standard output is misformatted.
         */
-        static Outcome::ErrnoResult<std::set<FormatOptions>>
+        static std::set<FormatOptions>
         loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
-        static Outcome::ErrnoResult<std::optional<FormatOptions>>
+        static std::optional<FormatOptions>
         loadFromProcess(const FFmpegProcess::ProcessData &proc,
                         const QByteArrayView &name);
+        
+        QByteArray name() const;
+        QByteArray description() const;
+        bool supportsDemux() const;
+        bool supportsMux() const;
+        
+        /*
+        @brief Strong ordering comparator
+        */
+        bool operator<(const FormatOptions &rhs) const;
     
     private:
         QByteArray m_name, m_desc;
@@ -95,7 +105,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
     // Bitstream filters are just characterized by name
 
     class PixelFormatOptions {
-        Q_OBJECT
+        Q_GADGET
 
         friend class PixelFormatOptionsPrivate;
 
@@ -109,7 +119,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
         QList<int> bitDepths() const;
 
     private:
-        QByteArray name;
+        QByteArray m_name;
         int m_supportedInput:1;
         int m_supportedOutput:1;
         int m_hwAccel:1;
@@ -121,7 +131,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess::Options {
     };
 
     class SampleFormatOptions {
-        Q_OBJECT
+        Q_GADGET
 
         friend class SampleFormatOptionsPrivate;
 
