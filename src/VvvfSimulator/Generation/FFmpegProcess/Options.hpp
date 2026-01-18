@@ -17,130 +17,126 @@
 #include "ProcessData.hpp"
 
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
-    class EncoderOptions {
-        Q_GADGET
+class EncoderOptions {
+  Q_GADGET
 
-        friend class EncoderOptionsPrivate;
+  friend class EncoderOptionsPrivate;
 
-    public:
-        enum class EncoderType {
-            Video,
-            Audio,
-            Subtitle
-        };
+public:
+  enum class EncoderType { Video, Audio, Subtitle };
 
-        /*
-        @brief Tries to read the list of encoders supported by an FFmpeg
-        executable.
-        @returns The list of available encoders.
-        @throws std::bad_alloc, std::runtime_error...
-        */
-        static std::set<EncoderOptions>
-        loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
-        static std::optional<EncoderOptions>
-        loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                        const QByteArrayView &name);
+  /*
+  @brief Tries to read the list of encoders supported by an FFmpeg
+  executable.
+  @returns The list of available encoders.
+  @throws std::bad_alloc, std::runtime_error...
+  */
+  static std::set<EncoderOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<EncoderOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QByteArrayView &name);
 
-        QByteArray name() const;
-        QByteArray description() const;
-        EncoderType type() const;
-        bool supportsFrameLevelMultiThreading() const;
-        bool supportsSliceLevelMultiThreading() const;
-        bool experimental() const;
-        bool supportsDrawHorizontalBand() const;
-        bool supportsDRM1() const;
+  QByteArray name() const;
+  QByteArray description() const;
+  EncoderType type() const;
+  bool supportsFrameLevelMultiThreading() const;
+  bool supportsSliceLevelMultiThreading() const;
+  bool experimental() const;
+  bool supportsDrawHorizontalBand() const;
+  bool supportsDRM1() const;
 
-        /*
-        @brief Strong ordering comparator
-        */
-        bool operator<(const EncoderOptions &rhs) const;
-    
-    private:
-        QByteArray m_name, m_desc;
-        EncoderType m_type;
-        int m_frameLevelMT:1;
-        int m_sliceLevelMT:1;
-        int m_experimental:1;
-        int m_drawHorizBand:1;
-        int m_drm1:1;
-    };
+  /*
+  @brief Strong ordering comparator
+  */
+  bool operator<(const EncoderOptions &rhs) const;
 
-    class FormatOptions {
-        Q_GADGET
+private:
+  QByteArray m_name, m_desc;
+  EncoderType m_type;
+  int m_frameLevelMT : 1;
+  int m_sliceLevelMT : 1;
+  int m_experimental : 1;
+  int m_drawHorizBand : 1;
+  int m_drm1 : 1;
+};
 
-        friend class FormatOptionsPrivate;
+class FormatOptions {
+  Q_GADGET
 
-    public:
-        /*
-        @brief Tries to read the list of encoders supported by an FFmpeg
-        executable.
-        @returns The list of available formats.
-        If not, if the error code is positive, it is a QProcess::ProcessError.
-        If negative, then it is:
-        * -1: Can not read lines from the FFmpeg process's standard output.
-        * -2: The process's standard output is misformatted.
-        */
-        static std::set<FormatOptions>
-        loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
-        static std::optional<FormatOptions>
-        loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                        const QByteArrayView &name);
-        
-        QByteArray name() const;
-        QByteArray description() const;
-        bool supportsDemux() const;
-        bool supportsMux() const;
-        
-        /*
-        @brief Strong ordering comparator
-        */
-        bool operator<(const FormatOptions &rhs) const;
-    
-    private:
-        QByteArray m_name, m_desc;
-        bool m_demuxer;
-        bool m_muxer;
-    };
+  friend class FormatOptionsPrivate;
 
-    // Bitstream filters are just characterized by name
+public:
+  /*
+  @brief Tries to read the list of encoders supported by an FFmpeg
+  executable.
+  @returns The list of available formats.
+  If not, if the error code is positive, it is a QProcess::ProcessError.
+  If negative, then it is:
+  * -1: Can not read lines from the FFmpeg process's standard output.
+  * -2: The process's standard output is misformatted.
+  */
+  static std::set<FormatOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<FormatOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QByteArrayView &name);
 
-    class PixelFormatOptions {
-        Q_GADGET
+  QByteArray name() const;
+  QByteArray description() const;
+  bool supportsDemux() const;
+  bool supportsMux() const;
 
-        friend class PixelFormatOptionsPrivate;
+  /*
+  @brief Strong ordering comparator
+  */
+  bool operator<(const FormatOptions &rhs) const;
 
-    public:
-        QByteArray name() const;
-        bool supportedInputForConversion() const;
-        bool supportedOutputForConversion() const;
-        bool hardwareAccelerated() const;
-        bool paletted() const;
-        bool bitstreamFormat() const;
-        QList<int> bitDepths() const;
+private:
+  QByteArray m_name, m_desc;
+  bool m_demuxer;
+  bool m_muxer;
+};
 
-    private:
-        QByteArray m_name;
-        int m_supportedInput:1;
-        int m_supportedOutput:1;
-        int m_hwAccel:1;
-        int m_paletted:1;
-        int m_bitstream:1;
-        int m_nbComponents;
-        int m_bpp;
-        QList<int> m_bitDepths;
-    };
+// Bitstream filters are just characterized by name
 
-    class SampleFormatOptions {
-        Q_GADGET
+class PixelFormatOptions {
+  Q_GADGET
 
-        friend class SampleFormatOptionsPrivate;
+  friend class PixelFormatOptionsPrivate;
 
-    public:
-        QByteArray name() const;
-        int bitDepth() const;
+public:
+  QByteArray name() const;
+  bool supportedInputForConversion() const;
+  bool supportedOutputForConversion() const;
+  bool hardwareAccelerated() const;
+  bool paletted() const;
+  bool bitstreamFormat() const;
+  QList<int> bitDepths() const;
 
-    private:
-        QByteArray m_name;
-        int m_depth;
-    };
-}
+private:
+  QByteArray m_name;
+  int m_supportedInput : 1;
+  int m_supportedOutput : 1;
+  int m_hwAccel : 1;
+  int m_paletted : 1;
+  int m_bitstream : 1;
+  int m_nbComponents;
+  int m_bpp;
+  QList<int> m_bitDepths;
+};
+
+class SampleFormatOptions {
+  Q_GADGET
+
+  friend class SampleFormatOptionsPrivate;
+
+public:
+  QByteArray name() const;
+  int bitDepth() const;
+
+private:
+  QByteArray m_name;
+  int m_depth;
+};
+} // namespace VvvfSimulator::Generation::FFmpegProcess::Options
