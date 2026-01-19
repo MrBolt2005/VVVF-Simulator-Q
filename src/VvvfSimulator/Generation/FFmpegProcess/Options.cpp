@@ -1,6 +1,10 @@
 #include "Options.hpp"
 // Standard Library
+#include <cstdlib> // for EXIT_SUCCESS
 #include <memory>
+
+static_assert(EXIT_SUCCESS == 0, "We are on a platform where the EXIT_SUCCESS "
+                                 "code isn't 0, investigate!");
 
 // #define STRONG_COMPARE_RETURN(attrib) \
 // if (##attrib < rhs.##attrib) return true;
@@ -8,7 +12,8 @@
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
 namespace {
 std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path,
-                                     const QStringList &arguments) {
+                                     const QStringList &arguments,
+                                     int &outExitCode) {
   auto proc = std::make_unique<QProcess>();
 
   proc->setProgram(QString::fromStdU16String(path.u16string()));
@@ -25,12 +30,13 @@ std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path,
 
   while (true) {
     if (started) {
-      bool finished = proc->waitForFinished();
-      if (!finished) {
+      bool exiting = proc->waitForFinished();
+      if (!exiting) {
         if (errCode == -1)
           errCode = proc->error();
         goto fail;
       }
+      outExitCode = proc->exitCode();
       return proc;
     }
     if (errCode != -1)
@@ -38,7 +44,7 @@ std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path,
   };
 
 fail:
-  std::string_view what;
+  const char *what;
   switch (errCode) {
   case QProcess::FailedToStart:
     what = "The process failed to start.";
@@ -58,14 +64,19 @@ fail:
   default:
     what = "An unknown error occurred.";
   }
-  throw std::runtime_error(what.data());
+  throw std::runtime_error(what);
 }
 } // anonymous namespace
 
 std::set<EncoderOptions>
 EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
-  auto resProc = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"),
-                                          QStringLiteral("-encoders")});
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(),
+      {QStringLiteral("-hide_banner"), QStringLiteral("-encoders")}, exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
 
   // Seek separator line, which contains only the '-' character
   QByteArray line;
@@ -201,8 +212,13 @@ bool EncoderOptions::operator<(const EncoderOptions &rhs) const {
 
 std::set<FormatOptions>
 FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
-  auto resProc = tryOneShot(proc.path(), {QStringLiteral("-hide_banner"),
-                                          QStringLiteral("-formats")});
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-formats")},
+      exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
 
   // Seek separator line, which contains only the '-' character
   QByteArray line;
@@ -294,5 +310,30 @@ bool FormatOptions::operator<(const FormatOptions &rhs) const {
   if (m_muxer < rhs.m_muxer)
     return true;
   return false;
+}
+
+std::set<QByteArray> loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc)
+{
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-bsfs")},
+      exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
+  
+  // Skip line 1, which just says "Bitstream filters:"
+  (void)resProc->readLine();
+
+  std::set<QByteArray> retVal;
+
+  if (!resProc->canReadLine())
+    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
+        "Can not read line(s) from the process's "
+        "standard output: ")));
+  while (resProc->canReadLine())
+    retVal.emplace(resProc->readLine());
+  
+  return retVal;
 }
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options

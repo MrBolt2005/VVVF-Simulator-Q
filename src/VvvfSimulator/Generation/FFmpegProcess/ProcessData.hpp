@@ -22,19 +22,48 @@ class ProcessData {
   QStringList m_userArguments;
 
 public:
+  #pragma region OneShotPrompts
+  //
+  // Query one-shot prompts from FFmpeg
+  //
+
   /*
   @brief Attempts to read an FFmpeg executable's supported features,
   and puts the results on the enabled and disabled parameter lists.
   @throws std::runtime_error
   */
-  static void tryGetFFmpegFeatures(const std::filesystem::path &path,
+  static void getFFmpegFeatures(const std::filesystem::path &path,
                                    QByteArrayList &enabled,
                                    QByteArrayList &disabled);
   /*
   @brief Attempts to read an FFmpeg executable's version information.
   @throws std::runtime_error
   */
-  static QByteArray tryGetFFmpegVersion(const std::filesystem::path &path);
+  static QByteArray getFFmpegVersion(const std::filesystem::path &path);
+
+  enum class HelpLength {
+    Basic,
+    Long,
+    Full
+  };
+
+  /*
+  @brief Attempts to read an FFmpeg encoder's options.
+  @throws std::runtime_error
+  */
+  static QByteArray getFFmpegHelpEncoder(const std::filesystem::path &path,
+                                         const QStringView &name,
+                                         HelpLength length = HelpLength::Basic);
+  
+  /*
+  @brief Attempts to read an FFmpeg format's options.
+  @throws std::runtime_error
+  */
+  static QByteArray getFFmpegHelpFormat(const std::filesystem::path &path,
+                                         const QStringView &name,
+                                         HelpLength length = HelpLength::Basic);
+
+#pragma endregion
 
   std::filesystem::path path() const;
 };

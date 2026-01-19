@@ -70,11 +70,8 @@ public:
   /*
   @brief Tries to read the list of encoders supported by an FFmpeg
   executable.
-  @returns The list of available formats.
-  If not, if the error code is positive, it is a QProcess::ProcessError.
-  If negative, then it is:
-  * -1: Can not read lines from the FFmpeg process's standard output.
-  * -2: The process's standard output is misformatted.
+  @returns The list of available encoders.
+  @throws std::bad_alloc, std::runtime_error...
   */
   static std::set<FormatOptions>
   loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
@@ -99,6 +96,8 @@ private:
 };
 
 // Bitstream filters are just characterized by name
+std::set<QByteArray>
+loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc);
 
 class PixelFormatOptions {
   Q_GADGET

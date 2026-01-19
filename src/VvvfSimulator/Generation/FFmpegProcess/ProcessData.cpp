@@ -60,7 +60,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess {
         }
     } // anonymous namespace
 
-    void ProcessData::tryGetFFmpegFeatures(const std::filesystem::path &path, QByteArrayList &enabled, QByteArrayList &disabled)
+    void ProcessData::getFFmpegFeatures(const std::filesystem::path &path, QByteArrayList &enabled, QByteArrayList &disabled)
     {
         auto res = readOneShot(path, {QStringLiteral("-version")});
         
@@ -85,8 +85,29 @@ namespace VvvfSimulator::Generation::FFmpegProcess {
         // return Outcome::success();
     }
 
-    QByteArray ProcessData::tryGetFFmpegVersion(const std::filesystem::path &path)
+    QByteArray ProcessData::getFFmpegVersion(const std::filesystem::path &path)
     {
         return readOneShot(path, {QStringLiteral("-version")});
+    }
+
+    namespace {
+    QByteArray getFFmpegHelpCommon(const std::filesystem::path &path,
+                                   const QStringView &name, QString kind,
+                                   ProcessData::HelpLength length) {
+      QStringList args{QStringLiteral("-hide_banner")};
+      if (length == ProcessData::HelpLength::Long)
+        args.emplace_back(QStringLiteral("long"));
+      else if (length == ProcessData::HelpLength::Full)
+        args.emplace_back(QStringLiteral("full"));
+      args.emplace_back(std::move(kind.append(name)));
+      return readOneShot(path, args);
+    }
+    }
+    
+    QByteArray
+    ProcessData::getFFmpegHelpEncoder(const std::filesystem::path &path,
+                                      const QStringView &name,
+                                      HelpLength length) {
+      return getFFmpegHelpCommon(path, name, QStringLiteral("encoder="), length);
     }
 }
