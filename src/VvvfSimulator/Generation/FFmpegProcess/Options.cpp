@@ -104,11 +104,9 @@ EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   while (resProc->canReadLine()) {
     EncoderOptions options;
 
-    line = resProc->readLine().trimmed();
+    line = resProc->readLine().simplified();
     QByteArrayList words = line.split(' ');
 
-    // Filter out multiple sequential spaces
-    words.removeAll("");
     // Size check
     if (words.size() < 2)
       throw std::runtime_error("The process's standard output is misformatted: "
@@ -248,11 +246,9 @@ FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   while (resProc->canReadLine()) {
     FormatOptions options;
 
-    line = resProc->readLine().trimmed();
+    line = resProc->readLine().simplified();
     QByteArrayList words = line.split(' ');
 
-    // Filter out multiple sequential spaces
-    words.removeAll("");
     // Size check
     if (words.size() < 2)
       throw std::runtime_error("The process's standard output is misformatted: "
@@ -382,11 +378,9 @@ PixelFormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   while (resProc->canReadLine()) {
     PixelFormatOptions options;
 
-    line = resProc->readLine().trimmed();
+    line = resProc->readLine().simplified();
     QByteArrayList words = line.split(' ');
 
-    // Filter out multiple sequential spaces
-    words.removeAll("");
     // Size check
     if (words.size() < 5)
       throw std::runtime_error("The process's standard output is misformatted: "
@@ -519,12 +513,10 @@ std::set<SampleFormatOptions> SampleFormatOptions::loadAllFromProcess(
     throw std::runtime_error(qPrintable(resProc->errorString().prepend(
         "Can not read line(s) from the process's "
         "standard output: ")));
-  line = resProc->readLine().trimmed();
+  line = resProc->readLine().simplified();
 
   words = line.split(' ');
 
-  // Filter out multiple sequential spaces
-  words.removeAll("");
   // Size check
   if (words.size() < 2)
     throw std::runtime_error("The process's standard output is misformatted: "
@@ -545,11 +537,9 @@ std::set<SampleFormatOptions> SampleFormatOptions::loadAllFromProcess(
   while (resProc->canReadLine()) {
     SampleFormatOptions options;
 
-    line = resProc->readLine().trimmed();
+    line = resProc->readLine().simplified();
     QByteArrayList words = line.split(' ');
 
-    // Filter out multiple sequential spaces
-    words.removeAll("");
     // Size check
     if (words.size() < 2)
       throw std::runtime_error("The process's standard output is misformatted: "
@@ -605,12 +595,10 @@ ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
     throw std::runtime_error(qPrintable(resProc->errorString().prepend(
         "Can not read line(s) from the process's "
         "standard output: ")));
-  line = resProc->readLine().trimmed();
+  line = resProc->readLine().simplified();
 
   words = line.split(' ');
 
-  // Filter out multiple sequential spaces
-  words.removeAll("");
   // Size check
   if (words.size() < 2)
     throw std::runtime_error("The process's standard output is misformatted: "
@@ -632,14 +620,12 @@ ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   while (resProc->canReadLine()) {
     ChannelOptions options;
 
-    line = resProc->readLine().trimmed();
+    line = resProc->readLine().simplified();
     // Break if right before the separator for "Standard channel layouts"
     if (line.isEmpty())
       break;
     QByteArrayList words = line.split(' ');
 
-    // Filter out multiple sequential spaces
-    words.removeAll("");
     // Size check
     if (words.size() < 2)
       throw std::runtime_error("The process's standard output is misformatted: "
