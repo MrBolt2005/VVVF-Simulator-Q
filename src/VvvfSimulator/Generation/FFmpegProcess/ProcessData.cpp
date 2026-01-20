@@ -21,6 +21,8 @@ namespace VvvfSimulator::Generation::FFmpegProcess {
                 errCode = error;
             });
 
+            proc.start();
+
             while (true) {
                 if (started) {
                     bool finished = proc.waitForFinished();

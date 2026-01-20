@@ -15,7 +15,9 @@
 #include <QByteArrayView>
 #include <QMap>
 #include <QObject>
+#include <QString>
 // Internal
+#include "Options.hpp"
 #include "../../Util/String.hpp"
 #include "../../Util/Thread.hpp"
 
@@ -51,6 +53,6 @@ namespace VvvfSimulator::Generation::Audio {
 		int                                 strict()         const;
 
     private:
-        Util::Thread
+        Util::Thread::MutexAPtrWrapper m_lock;
     };
 }

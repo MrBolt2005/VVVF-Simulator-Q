@@ -30,6 +30,8 @@ std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path,
       proc.get(), &QProcess::errorOccurred,
       [&errCode](QProcess::ProcessError error) { errCode = error; });
 
+  proc->start();
+
   while (true) {
     if (started) {
       bool exiting = proc->waitForFinished();
@@ -562,7 +564,7 @@ std::set<SampleFormatOptions> SampleFormatOptions::loadAllFromProcess(
           "The process's standard output is misformatted: failed to "
           "parse sample format option bit depth.");
 
-    retVal.emplace(options);
+    retVal.emplace(std::move(options));
   }
 
   return retVal;
@@ -572,5 +574,88 @@ bool SampleFormatOptions::operator<(const SampleFormatOptions &rhs) const {
   if (m_name < rhs.m_name)
     return true;
   return m_depth < rhs.m_depth;
+}
+
+std::set<ChannelOptions>
+ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(),
+      {QStringLiteral("-hide_banner"), QStringLiteral("-layouts")},
+      exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
+
+  // Seek header: "name depth"
+  QByteArray line;
+  QByteArrayList words;
+
+  if (!resProc->canReadLine())
+    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
+        "Can not read line(s) from the process's "
+        "standard output: ")));
+  line = resProc->readLine().trimmed();
+  // 1st header check
+  if (line != "Individual channels:")
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "invalid (1st) header line.");
+
+  if (!resProc->canReadLine())
+    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
+        "Can not read line(s) from the process's "
+        "standard output: ")));
+  line = resProc->readLine().trimmed();
+
+  words = line.split(' ');
+
+  // Filter out multiple sequential spaces
+  words.removeAll("");
+  // Size check
+  if (words.size() < 2)
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "incorrect section count.");
+
+  auto &w1 = words[0], &w2 = words[1];
+  if (w1 != "NAME" || w2 != "DESCRIPTION")
+    qWarning()
+        << QObject::tr(
+               "Expected process standard output's 2nd header line to be { "
+               "\"NAME\", \"DESCRIPTION\" }, but instead got { \"%1\", \"%2\" "
+               "}.")
+               .arg(w1)
+               .arg(w2);
+
+  std::set<ChannelOptions> retVal;
+
+  // Read lines
+  while (resProc->canReadLine()) {
+    ChannelOptions options;
+
+    line = resProc->readLine().trimmed();
+    // Break if right before the separator for "Standard channel layouts"
+    if (line.isEmpty())
+      break;
+    QByteArrayList words = line.split(' ');
+
+    // Filter out multiple sequential spaces
+    words.removeAll("");
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
+
+    // 1st word: Name
+    options.m_name = words.front();
+    words.pop_front();
+
+    // Remaining words: Description
+    options.m_desc = words.join(' ');
+
+    // Send constructed object to return value
+    retVal.emplace(std::move(options));
+  }
+
+  return retVal;
 }
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options

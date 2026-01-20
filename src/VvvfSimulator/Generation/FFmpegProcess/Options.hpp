@@ -161,4 +161,24 @@ private:
   QString m_name;
   int m_depth;
 };
+
+class ChannelOptions {
+  Q_GADGET
+
+  friend class ChannelOptionsPrivate;
+
+public:
+  static std::set<ChannelOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<ChannelOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QStringView &name);
+
+  QString name() const;
+  QString description() const;
+
+private:
+  QString m_name;
+  QString m_desc;
+};
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options
