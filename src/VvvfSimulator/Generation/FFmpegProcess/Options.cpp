@@ -2,6 +2,8 @@
 // Standard Library
 #include <cstdlib> // for EXIT_SUCCESS
 #include <memory>
+// Packages
+#include <QDebug>
 
 static_assert(EXIT_SUCCESS == 0, "We are on a platform where the EXIT_SUCCESS "
                                  "code isn't 0, investigate!");
@@ -100,7 +102,7 @@ EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   while (resProc->canReadLine()) {
     EncoderOptions options;
 
-    line = resProc->readLine();
+    line = resProc->readLine().trimmed();
     QByteArrayList words = line.split(' ');
 
     // Filter out multiple sequential spaces
@@ -209,9 +211,7 @@ bool EncoderOptions::operator<(const EncoderOptions &rhs) const {
     return true;
   if (m_drawHorizBand < rhs.m_drawHorizBand)
     return true;
-  if (m_drm1 < rhs.m_drm1)
-    return true;
-  return false;
+  return m_drm1 < rhs.m_drm1;
 }
 
 std::set<FormatOptions>
@@ -242,11 +242,11 @@ FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
   std::set<FormatOptions> retVal;
 
-  // Read codec lines
+  // Read lines
   while (resProc->canReadLine()) {
     FormatOptions options;
 
-    line = resProc->readLine();
+    line = resProc->readLine().trimmed();
     QByteArrayList words = line.split(' ');
 
     // Filter out multiple sequential spaces
@@ -315,9 +315,7 @@ bool FormatOptions::operator<(const FormatOptions &rhs) const {
     return true;
   if (m_demuxer < rhs.m_demuxer)
     return true;
-  if (m_muxer < rhs.m_muxer)
-    return true;
-  return false;
+  return m_muxer < rhs.m_muxer;
 }
 
 std::set<QString>
@@ -331,7 +329,12 @@ loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc) {
     throw std::runtime_error("The process didn't return success when exiting.");
 
   // Skip line 1, which just says "Bitstream filters:"
-  (void)resProc->readLine();
+  auto header = resProc->readLine().trimmed();
+  if (header != "Bitstream filters:")
+    qWarning() << QObject::tr(
+                      "Expected process standard output's header line to be "
+                      "\"Bitstream filters:\", but instead got \"%1\".")
+                      .arg(header);
 
   std::set<QString> retVal;
 
@@ -340,7 +343,7 @@ loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc) {
         "Can not read line(s) from the process's "
         "standard output: ")));
   while (resProc->canReadLine())
-    retVal.emplace(resProc->readLine());
+    retVal.emplace(resProc->readLine().trimmed());
 
   return retVal;
 }
@@ -373,11 +376,11 @@ PixelFormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
   std::set<PixelFormatOptions> retVal;
 
-  // Read codec lines
+  // Read lines
   while (resProc->canReadLine()) {
     PixelFormatOptions options;
 
-    line = resProc->readLine();
+    line = resProc->readLine().trimmed();
     QByteArrayList words = line.split(' ');
 
     // Filter out multiple sequential spaces
@@ -474,4 +477,100 @@ bool PixelFormatOptions::paletted() const { return m_paletted != 0; }
 bool PixelFormatOptions::bitstreamFormat() const { return m_bitstream != 0; }
 
 QList<int> PixelFormatOptions::bitDepths() const { return m_bitDepths; }
+
+bool PixelFormatOptions::operator<(const PixelFormatOptions &rhs) const {
+  if (m_name < rhs.m_name)
+    return true;
+  if (m_supportedInput < rhs.m_supportedInput)
+    return true;
+  if (m_supportedOutput < rhs.m_supportedOutput)
+    return true;
+  if (m_hwAccel < rhs.m_hwAccel)
+    return true;
+  if (m_paletted < rhs.m_paletted)
+    return true;
+  if (m_bitstream < rhs.m_bitstream)
+    return true;
+  if (m_nbComponents < rhs.m_nbComponents)
+    return true;
+  if (m_bpp < rhs.m_bpp)
+    return true;
+  return m_bitDepths < rhs.m_bitDepths;
+}
+
+std::set<SampleFormatOptions> SampleFormatOptions::loadAllFromProcess(
+    const FFmpegProcess::ProcessData &proc) {
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(),
+      {QStringLiteral("-hide_banner"), QStringLiteral("-sample_fmts")},
+      exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
+
+  // Seek header: "name depth"
+  QByteArray line;
+  QByteArrayList words;
+
+  if (!resProc->canReadLine())
+    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
+        "Can not read line(s) from the process's "
+        "standard output: ")));
+  line = resProc->readLine().trimmed();
+
+  words = line.split(' ');
+
+  // Filter out multiple sequential spaces
+  words.removeAll("");
+  // Size check
+  if (words.size() < 2)
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "incorrect section count.");
+
+  auto &w1 = words[0], &w2 = words[1];
+  if (w1 != "name" || w2 != "depth")
+    qWarning()
+        << QObject::tr(
+               "Expected process standard output's header line to be { "
+               "\"name\", \"depth\" }, but instead got { \"%1\", \"%2\" }.")
+               .arg(w1)
+               .arg(w2);
+
+  std::set<SampleFormatOptions> retVal;
+
+  // Read lines
+  while (resProc->canReadLine()) {
+    SampleFormatOptions options;
+
+    line = resProc->readLine().trimmed();
+    QByteArrayList words = line.split(' ');
+
+    // Filter out multiple sequential spaces
+    words.removeAll("");
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
+
+    options.m_name = words[0];
+
+    bool ok;
+    options.m_depth = words[1].toInt(&ok);
+    if (!ok)
+      throw std::runtime_error(
+          "The process's standard output is misformatted: failed to "
+          "parse sample format option bit depth.");
+
+    retVal.emplace(options);
+  }
+
+  return retVal;
+}
+
+bool SampleFormatOptions::operator<(const SampleFormatOptions &rhs) const {
+  if (m_name < rhs.m_name)
+    return true;
+  return m_depth < rhs.m_depth;
+}
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options

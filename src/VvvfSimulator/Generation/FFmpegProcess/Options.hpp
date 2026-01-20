@@ -120,6 +120,11 @@ public:
   bool bitstreamFormat() const;
   QList<int> bitDepths() const;
 
+  /*
+  @brief Strong ordering comparator
+  */
+  bool operator<(const PixelFormatOptions &rhs) const;
+
 private:
   QString m_name;
   int m_supportedInput : 1;
@@ -138,8 +143,19 @@ class SampleFormatOptions {
   friend class SampleFormatOptionsPrivate;
 
 public:
+  static std::set<SampleFormatOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<SampleFormatOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QStringView &name);
+
   QString name() const;
   int bitDepth() const;
+
+  /*
+  @brief Strong ordering comparator
+  */
+  bool operator<(const SampleFormatOptions &rhs) const;
 
 private:
   QString m_name;
