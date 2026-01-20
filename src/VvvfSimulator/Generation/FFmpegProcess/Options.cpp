@@ -105,6 +105,10 @@ EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
     // Filter out multiple sequential spaces
     words.removeAll("");
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
 
     // First word: flag set
     auto &flags = *(words.begin());
@@ -139,7 +143,7 @@ EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
     words.pop_front();
 
     // 2nd word: name
-    options.m_name = std::move(*words.begin());
+    options.m_name = *words.begin();
     words.pop_front();
 
     // Remaining words: description
@@ -154,11 +158,11 @@ EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
 std::optional<EncoderOptions>
 EncoderOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                                const QByteArrayView &name) {
+                                const QStringView &name) {
   auto allNames = loadAllFromProcess(proc);
   auto found =
       std::lower_bound(allNames.cbegin(), allNames.cend(), name,
-                       ([](const EncoderOptions &l, const QByteArrayView &r) {
+                       ([](const EncoderOptions &l, const QStringView &r) {
                          return l.m_name < r;
                        }));
   if (found == allNames.cend())
@@ -168,9 +172,9 @@ EncoderOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
   return *found;
 }
 
-QByteArray EncoderOptions::name() const { return m_name; }
+QString EncoderOptions::name() const { return m_name; }
 
-QByteArray EncoderOptions::description() const { return m_desc; }
+QString EncoderOptions::description() const { return m_desc; }
 
 EncoderOptions::EncoderType EncoderOptions::type() const { return m_type; }
 
@@ -247,6 +251,10 @@ FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
     // Filter out multiple sequential spaces
     words.removeAll("");
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
 
     // First word: flag set
     auto &flags = *(words.begin());
@@ -263,7 +271,7 @@ FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
     words.pop_front();
 
     // 2nd word: name
-    options.m_name = std::move(*words.begin());
+    options.m_name = *words.begin();
     words.pop_front();
 
     // Remaining words: description
@@ -278,11 +286,11 @@ FormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
 std::optional<FormatOptions>
 FormatOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                               const QByteArrayView &name) {
+                               const QStringView &name) {
   auto allNames = loadAllFromProcess(proc);
   auto found =
       std::lower_bound(allNames.cbegin(), allNames.cend(), name,
-                       ([](const FormatOptions &l, const QByteArrayView &r) {
+                       ([](const FormatOptions &l, const QStringView &r) {
                          return l.m_name < r;
                        }));
   if (found == allNames.cend())
@@ -292,9 +300,9 @@ FormatOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
   return *found;
 }
 
-QByteArray FormatOptions::name() const { return m_name; }
+QString FormatOptions::name() const { return m_name; }
 
-QByteArray FormatOptions::description() const { return m_desc; }
+QString FormatOptions::description() const { return m_desc; }
 
 bool FormatOptions::supportsDemux() const { return m_demuxer; }
 
@@ -312,8 +320,8 @@ bool FormatOptions::operator<(const FormatOptions &rhs) const {
   return false;
 }
 
-std::set<QByteArray> loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc)
-{
+std::set<QString>
+loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc) {
   int exitCode;
   auto resProc = tryOneShot(
       proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-bsfs")},
@@ -321,11 +329,11 @@ std::set<QByteArray> loadAllBitstreamFiltersFromProcess(const FFmpegProcess::Pro
 
   if (exitCode != EXIT_SUCCESS)
     throw std::runtime_error("The process didn't return success when exiting.");
-  
+
   // Skip line 1, which just says "Bitstream filters:"
   (void)resProc->readLine();
 
-  std::set<QByteArray> retVal;
+  std::set<QString> retVal;
 
   if (!resProc->canReadLine())
     throw std::runtime_error(qPrintable(resProc->errorString().prepend(
@@ -333,7 +341,137 @@ std::set<QByteArray> loadAllBitstreamFiltersFromProcess(const FFmpegProcess::Pro
         "standard output: ")));
   while (resProc->canReadLine())
     retVal.emplace(resProc->readLine());
-  
+
   return retVal;
 }
+
+std::set<PixelFormatOptions>
+PixelFormatOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(),
+      {QStringLiteral("-hide_banner"), QStringLiteral("-pix_fmts")}, exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
+
+  // Seek separator line, which contains only the '-' character
+  QByteArray line;
+  bool loop;
+  do {
+    loop = false;
+
+    if (!resProc->canReadLine())
+      throw std::runtime_error(qPrintable(resProc->errorString().prepend(
+          "Can not read line(s) from the process's "
+          "standard output: ")));
+    line = resProc->readLine().trimmed();
+    for (const auto &c : line)
+      if (c != '-')
+        loop = true;
+  } while (loop);
+
+  std::set<PixelFormatOptions> retVal;
+
+  // Read codec lines
+  while (resProc->canReadLine()) {
+    PixelFormatOptions options;
+
+    line = resProc->readLine();
+    QByteArrayList words = line.split(' ');
+
+    // Filter out multiple sequential spaces
+    words.removeAll("");
+    // Size check
+    if (words.size() < 5)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
+
+    // First word: flag set
+    auto &flags = *(words.begin());
+
+    // Length check
+    if (flags.size() < 5)
+      throw std::runtime_error(
+          "The process's standard output is misformatted: failed to "
+          "parse pixel format option flags.");
+
+    options.m_supportedInput = flags.contains('I') ? 1 : 0;
+    options.m_supportedOutput = flags.contains('O') ? 1 : 0;
+    options.m_hwAccel = flags.contains('H') ? 1 : 0;
+    options.m_paletted = flags.contains('P') ? 1 : 0;
+    options.m_bitstream = flags.contains('B') ? 1 : 0;
+    // Skip 1st word
+    words.pop_front();
+
+    // 2nd word: name
+    options.m_name = *words.begin();
+    words.pop_front();
+
+    // 3rd word: NB_COMPONENTS
+    bool ok;
+    options.m_nbComponents = words.begin()->toInt(&ok);
+    if (!ok)
+      throw std::runtime_error(
+          "The process's standard output is misformatted: failed to "
+          "parse pixel format option components count.");
+    words.pop_front();
+
+    // 4th word: bits per pixel
+    options.m_bpp = words.begin()->toInt(&ok);
+    if (!ok)
+      throw std::runtime_error(
+          "The process's standard output is misformatted: failed to "
+          "parse pixel format option bits-per-pixel count.");
+    words.pop_front();
+
+    // 5th word: bit depths
+    QByteArrayList bds = words.begin()->split('-');
+    options.m_bitDepths.reserve(bds.size());
+    for (const auto &sub : bds) {
+      int bd = words.begin()->toInt(&ok);
+      if (!ok)
+        throw std::runtime_error(
+            "The process's standard output is misformatted: failed to "
+            "parse pixel format option bits-per-pixel count.");
+      options.m_bitDepths.emplace_back(bd);
+    }
+  }
+
+  return retVal;
+}
+
+std::optional<PixelFormatOptions>
+PixelFormatOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                                    const QStringView &name) {
+  auto allNames = loadAllFromProcess(proc);
+  auto found =
+      std::lower_bound(allNames.cbegin(), allNames.cend(), name,
+                       ([](const PixelFormatOptions &l, const QStringView &r) {
+                         return l.m_name < r;
+                       }));
+  if (found == allNames.cend())
+    return std::nullopt;
+  if (found->m_name != name)
+    return std::nullopt;
+  return *found;
+}
+
+QString PixelFormatOptions::name() const { return m_name; }
+
+bool PixelFormatOptions::supportedInputForConversion() const {
+  return m_supportedInput != 0;
+}
+
+bool PixelFormatOptions::supportedOutputForConversion() const {
+  return m_supportedOutput != 0;
+}
+
+bool PixelFormatOptions::hardwareAccelerated() const { return m_hwAccel != 0; }
+
+bool PixelFormatOptions::paletted() const { return m_paletted != 0; }
+
+bool PixelFormatOptions::bitstreamFormat() const { return m_bitstream != 0; }
+
+QList<int> PixelFormatOptions::bitDepths() const { return m_bitDepths; }
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options

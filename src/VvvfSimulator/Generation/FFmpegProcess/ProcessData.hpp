@@ -49,6 +49,9 @@ public:
 
   /*
   @brief Attempts to read an FFmpeg encoder's options.
+  @returns If FFmpeg recognizes the name, the returned string will be the help
+  text for the option. Otherwise, this will return an error string like
+  "Codec '[name]' is not recognized by FFmpeg".
   @throws std::runtime_error
   */
   static QByteArray getFFmpegHelpEncoder(const std::filesystem::path &path,
@@ -57,11 +60,14 @@ public:
   
   /*
   @brief Attempts to read an FFmpeg format's options.
+  @returns If FFmpeg recognizes the name, the returned string will be the help
+  text for the option. Otherwise, this will return an error string like
+  "Codec '[name]' is not recognized by FFmpeg".
   @throws std::runtime_error
   */
   static QByteArray getFFmpegHelpFormat(const std::filesystem::path &path,
-                                         const QStringView &name,
-                                         HelpLength length = HelpLength::Basic);
+                                        const QStringView &name,
+                                        HelpLength length = HelpLength::Basic);
 
 #pragma endregion
 

@@ -94,7 +94,7 @@ namespace VvvfSimulator::Generation::FFmpegProcess {
     QByteArray getFFmpegHelpCommon(const std::filesystem::path &path,
                                    const QStringView &name, QString kind,
                                    ProcessData::HelpLength length) {
-      QStringList args{QStringLiteral("-hide_banner")};
+      QStringList args{QStringLiteral("-hide_banner"), QStringLiteral("-h")};
       if (length == ProcessData::HelpLength::Long)
         args.emplace_back(QStringLiteral("long"));
       else if (length == ProcessData::HelpLength::Full)
@@ -109,5 +109,10 @@ namespace VvvfSimulator::Generation::FFmpegProcess {
                                       const QStringView &name,
                                       HelpLength length) {
       return getFFmpegHelpCommon(path, name, QStringLiteral("encoder="), length);
+    }
+
+    QByteArray ProcessData::getFFmpegHelpFormat(const std::filesystem::path &path, const QStringView &name, HelpLength length)
+    {
+        return QByteArray();
     }
 }

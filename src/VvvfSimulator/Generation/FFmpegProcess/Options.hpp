@@ -12,8 +12,9 @@
 // Packages
 #include <QMap>
 #include <QObject>
+#include <QString>
 // Internal
-#include "../Outcome.hpp"
+// #include "../Outcome.hpp"
 #include "ProcessData.hpp"
 
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
@@ -35,10 +36,10 @@ public:
   loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
   static std::optional<EncoderOptions>
   loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                  const QByteArrayView &name);
+                  const QStringView &name);
 
-  QByteArray name() const;
-  QByteArray description() const;
+  QString name() const;
+  QString description() const;
   EncoderType type() const;
   bool supportsFrameLevelMultiThreading() const;
   bool supportsSliceLevelMultiThreading() const;
@@ -52,7 +53,7 @@ public:
   bool operator<(const EncoderOptions &rhs) const;
 
 private:
-  QByteArray m_name, m_desc;
+  QString m_name, m_desc;
   EncoderType m_type;
   int m_frameLevelMT : 1;
   int m_sliceLevelMT : 1;
@@ -68,19 +69,19 @@ class FormatOptions {
 
 public:
   /*
-  @brief Tries to read the list of encoders supported by an FFmpeg
+  @brief Tries to read the list of formats supported by an FFmpeg
   executable.
-  @returns The list of available encoders.
+  @returns The list of available formats.
   @throws std::bad_alloc, std::runtime_error...
   */
   static std::set<FormatOptions>
   loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
   static std::optional<FormatOptions>
   loadFromProcess(const FFmpegProcess::ProcessData &proc,
-                  const QByteArrayView &name);
+                  const QStringView &name);
 
-  QByteArray name() const;
-  QByteArray description() const;
+  QString name() const;
+  QString description() const;
   bool supportsDemux() const;
   bool supportsMux() const;
 
@@ -90,13 +91,13 @@ public:
   bool operator<(const FormatOptions &rhs) const;
 
 private:
-  QByteArray m_name, m_desc;
+  QString m_name, m_desc;
   bool m_demuxer;
   bool m_muxer;
 };
 
 // Bitstream filters are just characterized by name
-std::set<QByteArray>
+std::set<QString>
 loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc);
 
 class PixelFormatOptions {
@@ -105,7 +106,13 @@ class PixelFormatOptions {
   friend class PixelFormatOptionsPrivate;
 
 public:
-  QByteArray name() const;
+  static std::set<PixelFormatOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<PixelFormatOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QStringView &name);
+
+  QString name() const;
   bool supportedInputForConversion() const;
   bool supportedOutputForConversion() const;
   bool hardwareAccelerated() const;
@@ -114,7 +121,7 @@ public:
   QList<int> bitDepths() const;
 
 private:
-  QByteArray m_name;
+  QString m_name;
   int m_supportedInput : 1;
   int m_supportedOutput : 1;
   int m_hwAccel : 1;
@@ -131,11 +138,11 @@ class SampleFormatOptions {
   friend class SampleFormatOptionsPrivate;
 
 public:
-  QByteArray name() const;
+  QString name() const;
   int bitDepth() const;
 
 private:
-  QByteArray m_name;
+  QString m_name;
   int m_depth;
 };
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options
