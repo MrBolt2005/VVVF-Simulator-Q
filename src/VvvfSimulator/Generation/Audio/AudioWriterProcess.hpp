@@ -9,50 +9,93 @@
 // Standard Library
 #include <cinttypes>
 #include <filesystem>
+#include <optional>
 #include <utility>
 // Packages
-#include <libavformat/avformat.h>
 #include <QByteArrayView>
 #include <QMap>
 #include <QObject>
+#include <QPair>
 #include <QString>
+#include <libavformat/avformat.h>
 // Internal
-#include "Options.hpp"
 #include "../../Util/String.hpp"
 #include "../../Util/Thread.hpp"
+#include "Options.hpp"
 
 namespace VvvfSimulator::Generation::Audio {
-    class AudioWriter : public QObject {
-        Q_OBJECT
+using namespace FFmpegProcess;
+using namespace FFmpegProcess::Options;
 
-        // Should not be implemented
-        explicit AudioWriter(QObject *parent = nullptr);
+class AudioWriter : public QObject {
+  Q_OBJECT
 
-    public:
-        AudioWriter(const std::filesystem::path &fileName, int64_t bitRate,
-                  const std::pair<int64_t, int64_t> &bitRateRange,
-                  const QByteArrayView &codec, int channels,
-                  AVSampleFormat sampleFormat, QObject *parent = nullptr);
-        ~AudioWriter() override;
+  // Should not be implemented
+  explicit AudioWriter(QObject *parent = nullptr);
 
-        // Getters
-		int64_t                             bitRate()        const;
-		std::pair<int64_t, int64_t>         bitRateRange()   const;
-		AVChannelLayout                     channelLayout()  const;
-		int                                 channels()       const;
-		QByteArray                          codec()          const;
-		QString                             errorString()    const;
-		Util::String::TranslatableFmtString errorStringRaw() const;
-		std::filesystem::path               fileName()       const;
-		int                                 flags()          const;
-		int                                 flags2()         const;
-		bool                                isOpen()         const;
-		QMap<QByteArray, QByteArray>        option()         const;
-		AVSampleFormat                      sampleFormat()   const;
-		int                                 sampleRate()     const;
-		int                                 strict()         const;
+public:
+  AudioWriter(const std::filesystem::path &fileName, int64_t bitRate,
+              const QPair<int64_t, int64_t> &bitRateRange,
+              const QStringView &codecName, int channels,
+              const QStringView &sampleFormatName,
+              QObject *parent = nullptr);
+  ~AudioWriter() override;
 
-    private:
-        Util::Thread::MutexAPtrWrapper m_lock;
-    };
-}
+  // Getters
+  int64_t bitRate() const;
+  QPair<int64_t, int64_t> bitRateRange() const;
+  std::optional<ChannelLayoutOptions> channelLayout() const;
+  int channels() const;
+  std::optional<EncoderOptions> codec() const;
+  QString codecName() const;
+  QString errorString() const;
+  Util::String::TranslatableFmtString errorStringRaw() const;
+  std::filesystem::path fileName() const;
+  int flags() const;
+  int flags2() const;
+  QMap<QString, QString> inputOption() const;
+  bool isOpen() const;
+  QMap<QString, QString> outputOption() const;
+  std::optional<ProcessData> process() const;
+  std::optional<SampleFormatOptions> sampleFormat() const;
+  QString sampleFormatName() const;
+  int sampleRate() const;
+  int strict() const;
+
+public slots:
+  // Setters
+
+  void close();
+  bool open();
+  void writeSamples(const std::span<const char> &data);
+
+signals:
+  void errorOccurred();
+  void samplesWritten(std::size_t samples, std::size_t bytes);
+
+private:
+  Util::Thread::MutexAPtrWrapper m_lock;
+
+  // Fundamental attributes
+  std::filesystem::path m_fileName;
+  int64_t m_br;
+  QPair<int64_t, int64_t> m_brr;
+  QString m_encName;
+  int m_ch;
+  QString m_sampleFmtName;
+
+  // Optional attributes
+  QString m_chLytName;
+  int m_flags, m_flags2;
+  QMap<QString, QString> m_inOpt, m_outOpt;
+
+  // Internal work attributes
+  EncoderOptions m_enc;
+  Util::String::TranslatableFmtString m_err;
+  SampleFormatOptions m_sampleFmt;
+  ChannelLayoutOptions m_chLyt;
+  QProcess m_proc;
+
+  constexpr auto sizeOf() const noexcept { return sizeof(*this); }
+};
+} // namespace VvvfSimulator::Generation::Audio

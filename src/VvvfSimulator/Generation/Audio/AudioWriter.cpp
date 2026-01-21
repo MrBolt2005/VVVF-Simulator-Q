@@ -2,6 +2,7 @@
 
 // Packages
 #include <QList> // aka <QVector>
+#include "AudioWriterProcess.hpp"
 
 #define WARN_TEXT(x) "Cannot change the " x " attribute while the audio writer is open."
 
@@ -176,9 +177,12 @@ namespace VvvfSimulator::Generation::Audio
 		return true;
 	}
 
-	av::Dictionary AudioWriter::option() const { LOCK_AND_RETURN(m_opts) }
+    void AudioWriter::writeSamples(const std::span<const char> &samples)
+    {
+    }
+    av::Dictionary AudioWriter::option() const { LOCK_AND_RETURN(m_opts) }
 
-	bool AudioWriter::setBitRate(int64_t BR)
+    bool AudioWriter::setBitRate(int64_t BR)
 	{
 		LOCK_AND_SET_OPEN_CHECK("bit rate")
 		m_bitRate = BR;
