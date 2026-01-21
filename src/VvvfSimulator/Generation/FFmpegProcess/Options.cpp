@@ -11,6 +11,8 @@ static_assert(EXIT_SUCCESS == 0, "We are on a platform where the EXIT_SUCCESS "
 // #define STRONG_COMPARE_RETURN(attrib) \
 // if (##attrib < rhs.##attrib) return true;
 
+// TODO: (Try to) clean up this code, especially _regarding_ the boilerplates~
+
 namespace VvvfSimulator::Generation::FFmpegProcess::Options {
 namespace {
 std::unique_ptr<QProcess> tryOneShot(const std::filesystem::path &path,
@@ -70,7 +72,14 @@ fail:
   }
   throw std::runtime_error(what);
 }
-} // anonymous namespace
+
+void throwIfCantReadLine(QProcess &p) {
+  if (!p.canReadLine())
+    throw std::runtime_error(qPrintable(
+        p.errorString().prepend("Can not read line(s) from the process's "
+                                "standard output: ")));
+}
+} // namespace
 
 std::set<EncoderOptions>
 EncoderOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
@@ -336,10 +345,7 @@ loadAllBitstreamFiltersFromProcess(const FFmpegProcess::ProcessData &proc) {
 
   std::set<QString> retVal;
 
-  if (!resProc->canReadLine())
-    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
-        "Can not read line(s) from the process's "
-        "standard output: ")));
+  throwIfCantReadLine(*resProc);
   while (resProc->canReadLine())
     retVal.emplace(resProc->readLine().trimmed());
 
@@ -509,10 +515,7 @@ std::set<SampleFormatOptions> SampleFormatOptions::loadAllFromProcess(
   QByteArray line;
   QByteArrayList words;
 
-  if (!resProc->canReadLine())
-    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
-        "Can not read line(s) from the process's "
-        "standard output: ")));
+  throwIfCantReadLine(*resProc);
   line = resProc->readLine().simplified();
 
   words = line.split(' ');
@@ -570,8 +573,7 @@ std::set<ChannelOptions>
 ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   int exitCode;
   auto resProc = tryOneShot(
-      proc.path(),
-      {QStringLiteral("-hide_banner"), QStringLiteral("-layouts")},
+      proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-layouts")},
       exitCode);
 
   if (exitCode != EXIT_SUCCESS)
@@ -581,20 +583,14 @@ ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
   QByteArray line;
   QByteArrayList words;
 
-  if (!resProc->canReadLine())
-    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
-        "Can not read line(s) from the process's "
-        "standard output: ")));
+  throwIfCantReadLine(*resProc);
   line = resProc->readLine().trimmed();
   // 1st header check
   if (line != "Individual channels:")
     throw std::runtime_error("The process's standard output is misformatted: "
                              "invalid (1st) header line.");
 
-  if (!resProc->canReadLine())
-    throw std::runtime_error(qPrintable(resProc->errorString().prepend(
-        "Can not read line(s) from the process's "
-        "standard output: ")));
+  throwIfCantReadLine(*resProc);
   line = resProc->readLine().simplified();
 
   words = line.split(' ');
@@ -637,6 +633,169 @@ ChannelOptions::loadAllFromProcess(const FFmpegProcess::ProcessData &proc) {
 
     // Remaining words: Description
     options.m_desc = words.join(' ');
+
+    // Send constructed object to return value
+    retVal.emplace(std::move(options));
+  }
+
+  return retVal;
+}
+
+std::optional<ChannelOptions>
+ChannelOptions::loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                                const QStringView &name) {
+  auto allNames = loadAllFromProcess(proc);
+  auto found =
+      std::lower_bound(allNames.cbegin(), allNames.cend(), name,
+                       ([](const ChannelOptions &l, const QStringView &r) {
+                         return l.m_name < r;
+                       }));
+  if (found == allNames.cend())
+    return std::nullopt;
+  if (found->m_name != name)
+    return std::nullopt;
+  return *found;
+}
+
+QString ChannelOptions::name() const { return m_name; }
+
+QString ChannelOptions::description() const { return m_desc; }
+
+bool ChannelOptions::operator<(const ChannelOptions &rhs) const {
+  if (m_name < rhs.m_name)
+    return true;
+  return m_desc < rhs.m_desc;
+}
+
+std::set<ChannelLayoutOptions> ChannelLayoutOptions::loadAllFromProcess(
+    const FFmpegProcess::ProcessData &proc) {
+  int exitCode;
+  auto resProc = tryOneShot(
+      proc.path(), {QStringLiteral("-hide_banner"), QStringLiteral("-layouts")},
+      exitCode);
+
+  if (exitCode != EXIT_SUCCESS)
+    throw std::runtime_error("The process didn't return success when exiting.");
+
+  // Seek header: "name depth"
+  QByteArray line;
+  QByteArrayList words;
+
+  throwIfCantReadLine(*resProc);
+  line = resProc->readLine().trimmed();
+  // 1st header check
+  if (line != "Individual channels:")
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "invalid (1st) header line.");
+
+  throwIfCantReadLine(*resProc);
+  line = resProc->readLine().simplified();
+
+  words = line.split(' ');
+
+  // Size check
+  if (words.size() < 2)
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "incorrect section count.");
+
+  auto &w1 = words[0], &w2 = words[1];
+  if (w1 != "NAME" || w2 != "DESCRIPTION")
+    qWarning()
+        << QObject::tr(
+               "Expected process standard output's 2nd header line to be { "
+               "\"NAME\", \"DESCRIPTION\" }, but instead got { \"%1\", \"%2\" "
+               "}.")
+               .arg(w1)
+               .arg(w2);
+
+  std::set<ChannelOptions> chs;
+
+  // Read lines
+  while (true) {
+    ChannelOptions options;
+
+    throwIfCantReadLine(*resProc);
+
+    line = resProc->readLine().simplified();
+    // Break if right before the separator for "Standard channel layouts"
+    if (line.isEmpty())
+      break;
+    QByteArrayList words = line.split(' ');
+
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
+
+    // 1st word: Name
+    options.m_name = words.front();
+    words.pop_front();
+
+    // Remaining words: Description
+    options.m_desc = words.join(' ');
+
+    // Send constructed object to set of channels
+    chs.emplace(std::move(options));
+  }
+
+  throwIfCantReadLine(*resProc);
+  line = resProc->readLine().trimmed();
+  // Assert if next header line is correct
+  if (line != "Individual channels:")
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "invalid (3rd) header line.");
+
+  words = line.split(' ');
+
+  // Size check
+  if (words.size() < 2)
+    throw std::runtime_error("The process's standard output is misformatted: "
+                             "incorrect section count.");
+
+  w1 = words[0], w2 = words[1];
+  if (w1 != "NAME" || w2 != "DECOMPOSITION")
+    qWarning()
+        << QObject::tr(
+               "Expected process standard output's 4th header line to be { "
+               "\"NAME\", \"DECOMPOSITION\" }, but instead got { \"%1\", "
+               "\"%2\" "
+               "}.")
+               .arg(w1)
+               .arg(w2);
+  
+  std::set<ChannelLayoutOptions> retVal;
+
+  // Read lines
+  while (resProc->canReadLine()) {
+    ChannelLayoutOptions options;
+
+    line = resProc->readLine().simplified();
+    QByteArrayList words = line.split(' ');
+
+    // Size check
+    if (words.size() < 2)
+      throw std::runtime_error("The process's standard output is misformatted: "
+                               "incorrect section count.");
+
+    // 1st word: Name
+    options.m_name = words.front();
+    words.pop_front();
+
+    // Remaining words: Decomposition
+    QByteArrayList chNames = words.front().split('+');
+    static const auto chNameFinder = [](const ChannelOptions &l, const QStringView &r) {
+      return l.m_name < r;
+    };
+    options.m_decomp.reserve(chNames.size());
+    for (const auto &chName : chNames) {
+      auto chIt = std::lower_bound(chs.cbegin(), chs.cend(), chName, chNameFinder);
+      static constexpr auto itExcept = "Failed parsing channels into channel layout.";
+      if (chIt == chs.cend())
+        throw std::runtime_error(itExcept);
+      if (chIt->m_name != chName)
+        throw std::runtime_error(itExcept);
+      options.m_decomp.emplace_back(*chIt);
+    }
 
     // Send constructed object to return value
     retVal.emplace(std::move(options));

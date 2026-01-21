@@ -165,6 +165,7 @@ private:
 class ChannelOptions {
   Q_GADGET
 
+  friend class ChannelLayoutOptions;
   friend class ChannelOptionsPrivate;
 
 public:
@@ -177,8 +178,33 @@ public:
   QString name() const;
   QString description() const;
 
+  /*
+  @brief Strong ordering comparator
+  */
+  bool operator<(const ChannelOptions &rhs) const;
+
 private:
   QString m_name;
   QString m_desc;
+};
+
+class ChannelLayoutOptions {
+  Q_GADGET
+
+  friend class ChannelLayoutOptionsPrivate;
+
+public:
+  static std::set<ChannelLayoutOptions>
+  loadAllFromProcess(const FFmpegProcess::ProcessData &proc);
+  static std::optional<ChannelLayoutOptions>
+  loadFromProcess(const FFmpegProcess::ProcessData &proc,
+                  const QStringView &name);
+
+  QString name() const;
+  QList<ChannelOptions> decompostition() const;
+
+private:
+  QString m_name;
+  QList<ChannelOptions> m_decomp;
 };
 } // namespace VvvfSimulator::Generation::FFmpegProcess::Options
