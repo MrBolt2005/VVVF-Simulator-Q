@@ -762,7 +762,7 @@ std::set<ChannelLayoutOptions> ChannelLayoutOptions::loadAllFromProcess(
                "}.")
                .arg(w1)
                .arg(w2);
-  
+
   std::set<ChannelLayoutOptions> retVal;
 
   // Read lines
@@ -783,13 +783,16 @@ std::set<ChannelLayoutOptions> ChannelLayoutOptions::loadAllFromProcess(
 
     // Remaining words: Decomposition
     QByteArrayList chNames = words.front().split('+');
-    static const auto chNameFinder = [](const ChannelOptions &l, const QStringView &r) {
+    static const auto chNameFinder = [](const ChannelOptions &l,
+                                        const QStringView &r) {
       return l.m_name < r;
     };
     options.m_decomp.reserve(chNames.size());
     for (const auto &chName : chNames) {
-      auto chIt = std::lower_bound(chs.cbegin(), chs.cend(), chName, chNameFinder);
-      static constexpr auto itExcept = "Failed parsing channels into channel layout.";
+      auto chIt =
+          std::lower_bound(chs.cbegin(), chs.cend(), chName, chNameFinder);
+      static constexpr auto itExcept =
+          "Failed parsing channels into channel layout.";
       if (chIt == chs.cend())
         throw std::runtime_error(itExcept);
       if (chIt->m_name != chName)
