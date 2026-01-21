@@ -789,8 +789,8 @@ std::set<ChannelLayoutOptions> ChannelLayoutOptions::loadAllFromProcess(
     };
     options.m_decomp.reserve(chNames.size());
     for (const auto &chName : chNames) {
-      auto chIt =
-          std::lower_bound(chs.cbegin(), chs.cend(), chName, chNameFinder);
+      auto chIt = std::lower_bound(chs.cbegin(), chs.cend(), QString(chName),
+                                   chNameFinder);
       static constexpr auto itExcept =
           "Failed parsing channels into channel layout.";
       if (chIt == chs.cend())
