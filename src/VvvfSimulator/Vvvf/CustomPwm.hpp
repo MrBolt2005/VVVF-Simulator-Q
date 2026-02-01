@@ -16,63 +16,155 @@
    limitations under the License.
 */
 
-// CustomPwm.hpp
-// Version 1.9.1.1
+// Vvvf/CustomPwm.hpp
+// Version 1.10.0.0 - Custom PWM (CHM/SHE) switch angle table loader
 
-// Internal Includes
-#include "InternalMath.hpp"
-#include "Namespace_VVVF.h"
-#include "RflCppFormats.hpp"
-// Standard Library Includes
+#pragma once
+
+// Standard Library
+#include <vector>
 #include <cinttypes>
 #include <filesystem>
+#include <optional>
+#include <string>
+#include <memory>
 #include <map>
-#include <vector>
-// Package Includes
-#include <QReadWriteLock>
-#include <rfl/Result.hpp>
+// Packages
+#include <QString>
+// Internal
+#include "InternalMath.hpp"
+#include "../Outcome.hpp"
 
-namespace NAMESPACE_VVVF
+namespace VvvfSimulator::Vvvf::CustomPwm
 {
-    class CustomPwm
-    {
-        using RflCppFormats = VvvfSimulator::Yaml::RflCppFormats;
-        
-        static constexpr int maxPwmLevel = 2;
-        QReadWriteLock m_lock;
+	/// Switch angle entry (angle + output level)
+	struct SwitchAngle
+	{
+		double angle = 0.0;
+		uint8_t output = 0;
+	};
 
-    protected:
-        int32_t m_switchCount = 5;
-        double m_modulationIndexDivision = 0.01;
-        double m_minimumModulationIndex = 0.0;
-        uint32_t m_blockCount = 0;
-        
-        std::multimap<double, int_fast8_t> m_switchAngleTable{}; // Switching angles must be ordered!
-        std::vector<bool> m_polarity{};
+	/// Single modulation index block containing switch angles
+	struct ModulationBlock
+	{
+		uint8_t startLevel = 0;
+		std::vector<SwitchAngle> switchAngles;
+	};
 
-    public:
-        CustomPwm();
-        CustomPwm(const CustomPwm& other);
-        // Members left empty on source: m_switchAngleTable, m_polarity
-        CustomPwm(CustomPwm&& other);
-        CustomPwm(std::filesystem::path Path, RflCppFormats format = RflCppFormats::YAML);
+	/// Complete custom PWM lookup table
+	class CustomPwmTable
+	{
+	public:
+		CustomPwmTable() = default;
 
-        CustomPwm& operator=(const CustomPwm& other) noexcept;
-        // Members left empty on source: m_switchAngleTable, m_polarity
-        CustomPwm& operator=(CustomPwm&& other) noexcept;
-        
-        constexpr int32_t switchCount() const noexcept { return m_switchCount; }
-        constexpr double modulationIndexDivision() const noexcept { return m_modulationIndexDivision; }
-        constexpr double minimumModulationIndex() const noexcept { return m_minimumModulationIndex; }
-        constexpr uint32_t blockCount() const noexcept { return m_blockCount; }
-        constexpr const std::multimap<double, int_fast8_t>& constSwitchAngleTable() const noexcept { return m_switchAngleTable; }
-        constexpr       std::multimap<double, int_fast8_t>  switchAngleTable()      const noexcept { return std::multimap<double, int_fast8_t>(m_switchAngleTable); }
-        constexpr const std::vector<bool>& constPolarity() const noexcept { return m_polarity; }
-        constexpr       std::vector<bool>  polarity()      const noexcept { return std::vector<bool>(m_polarity); }
+		/// Load from binary stream (original .bin format)
+		explicit CustomPwmTable(const uint8_t* data, size_t size);
 
-        int_fast8_t getPWM(double M, double X) const;
-        
-        rfl::Result<rfl::Nothing> save(std::filesystem::path Path, RflCppFormats format = RflCppFormats::YAML) const;
-        rfl::Result<CustomPwm>    load(std::filesystem::path Path, RflCppFormats format = RflCppFormats::YAML);
-    };
-}
+		/// Load from file path
+		static Outcome::QStringResult<CustomPwmTable> loadFromBin(const QString& path);
+		static Outcome::QStringResult<CustomPwmTable> loadFromRfl(const QString& path);
+		explicit CustomPwmTable(const QString& path, bool fromBin);
+
+		/// Get PWM output level for given modulation index and phase angle
+		/// @param M Modulation index (0.0 - ~1.3)
+		/// @param X Phase angle (radians, 0 - 2π)
+		/// @return PWM level (0, 1, or 2 for 2-level)
+		int getPwm(double M, double X) const;
+
+		/// Static variant taking switch angle array directly
+		static int getPwm(const std::vector<SwitchAngle>& angles, double X, uint8_t startLevel);
+
+		// Getters
+		uint8_t getSwitchCount() const { return switchCount; }
+		double getModulationIndexDivision() const { return modulationIndexDivision; }
+		double getMinimumModulationIndex() const { return minimumModulationIndex; }
+		uint32_t getBlockCount() const { return blockCount; }
+		bool isValid() const { return blockCount > 0 && switchCount > 0; }
+
+	private:
+		static constexpr int MAX_PWM_LEVEL = 2;
+
+		uint8_t switchCount = 0;
+		double modulationIndexDivision = 0.0;
+		double minimumModulationIndex = 0.0;
+		uint32_t blockCount = 0;
+		std::vector<ModulationBlock> blocks;
+
+		void parseBinaryData(const uint8_t* data, size_t size);
+	};
+
+	/// Preset manager for embedded switch angle tables
+	namespace CustomPwmPresets
+	{
+		/// Preset identifiers matching upstream
+		enum class PresetId
+		{
+			L2Chm3Default,
+			L2Chm3Alt1,
+			L2Chm3Alt2,
+			L2Chm5Default,
+			L2Chm5Alt1,
+			L2Chm5Alt2,
+			L2Chm5Alt3,
+			L2Chm7Default,
+			L2Chm7Alt1,
+			L2Chm7Alt2,
+			L2Chm7Alt3,
+			L2Chm7Alt4,
+			L2Chm7Alt5,
+			L2Chm9Default,
+			L2Chm9Alt1,
+			L2Chm9Alt2,
+			L2Chm9Alt3,
+			L2Chm9Alt4,
+			L2Chm9Alt5,
+			L2Chm9Alt6,
+			L2Chm9Alt7,
+			L2Chm9Alt8,
+			L2Chm11Default,
+			L2Chm11Alt1,
+			L2Chm11Alt2,
+			L2Chm11Alt3,
+			L2Chm11Alt4,
+			L2Chm11Alt5,
+			L2Chm11Alt6,
+			L2Chm11Alt7,
+			L2Chm11Alt8,
+			L2Chm11Alt9,
+			L2Chm11Alt10,
+			L2Chm13Default,
+			L2Chm13Alt1,
+			L2Chm13Alt2,
+			L2Chm13Alt3,
+			L2Chm13Alt4,
+			L2Chm13Alt5,
+			L2Chm13Alt6,
+			L2Chm13Alt7,
+			L2Chm13Alt8,
+			L2Chm15Default,
+			L2Chm15Alt1,
+			L2Chm15Alt2,
+			L2Chm15Alt3,
+			L2Chm15Alt4,
+			L2Chm15Alt5,
+			L2Chm15Alt6,
+			L2Chm15Alt7,
+			L2Chm15Alt8,
+			L2Chm15Alt9,
+			L2Chm15Alt10,
+			L2Chm15Alt11,
+			L2Chm15Alt12,
+			// SHE presets would go here
+		};
+
+		/// Get preset table by ID (lazy loading)
+		std::shared_ptr<CustomPwmTable> getPreset(PresetId id);
+
+		/// Preload all presets asynchronously
+		void preloadAll();
+
+		/// Check if presets are loaded
+		bool isLoaded();
+	};
+
+} // namespace VvvfSimulator::Vvvf::CustomPwm
