@@ -1,0 +1,8 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+ContinuationIndentWidth: 4
+UseTab: Never
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 80

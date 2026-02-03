@@ -1,55 +1,77 @@
 #pragma once
+#ifndef LIBRARY__FFMPEGLOADER_HPP
+#define LIBRARY__FFMPEGLOADER_HPP
 
 // Copyright © 2026 VvvfGeeks, VVVF Systems
 // SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
 //
 // Library/FFmpegLoader.hpp
-// v1.10.0.0
+// v1.10.0.1
 
-// Standard Library
-#include <filesystem>
 // Packages
 #include <QByteArray>
+#include <QFileInfo>
 #include <QFunctionPointer>
+#include <QHash>
 #include <QLibrary>
+#include <QMutex>
+#include <QObject>
 #include <QPair>
-#include <QVariant>
+#include <QString>
 // Internal
 #include "../Util/String.hpp"
 
-namespace VvvfSimulator::Library::FFmpegLoader {
-typedef QHash<QByteArray, QFunctionPointer> FunctionMap;
+namespace VvvfSimulator::Library {
+class FFmpegLoader : public QObject {
+    Q_OBJECT
 
-#pragma region Loading
-bool isLoaded();
+  public:
+    typedef QHash<QByteArray, QFunctionPointer> FunctionMap;
 
-/*
-@brief Tries to load the FFmpeg library from the desired path.
-@returns A pair where element 1 is the version code if fetched, and element 2,
-whether the library was loaded and the version was valid.
-*/
-QPair<QByteArray, bool> load(const QString &fileName,
-                             const QVariant *version = nullptr);
+    explicit FFmpegLoader(QObject *parent = nullptr);
+    ~FFmpegLoader() override;
 
-bool unload();
+    enum class Libraries { Avutil, Swresample, Avcodec, Avformat };
 
-#pragma region Error
-#pragma endregion
+    // Getters
+    QString errorString() const;
+    Util::String::TranslatableFmtString errorStringRaw() const;
+    QString errorStringTr() const;
+    FunctionMap libavutilFuncCache() const;
+    FunctionMap libavcodecFuncCache() const;
+    FunctionMap libavformatFuncCache() const;
+    FunctionMap libswresampleFuncCache() const;
 
-#pragma endregion
+    QFunctionPointer resolve(const QByteArray &symbol, Libraries from);
+    QFunctionPointer resolveAvutil(const QByteArray &symbol);
+    QFunctionPointer resolveAvcodec(const QByteArray &symbol);
+    QFunctionPointer resolveAvformat(const QByteArray &symbol);
+    QFunctionPointer resolveSwresample(const QByteArray &symbol);
+    bool load(const QFileInfo &avutilPath, const QFileInfo &swresamplePath,
+              const QFileInfo &avcodecPath, const QFileInfo &avformatPath);
+    bool isLoaded() const;
+    void unload();
 
-#pragma region Cache
-FunctionMap currentCache();
+  private:
+    mutable QMutex m_lock;
 
-#pragma endregion
+    Util::String::TranslatableFmtString m_errStr;
 
-#pragma region Resolving
-/*
-@brief Tries to resolve a function from the loaded library.
-@returns If successful, the resolved function pointer, otherwise nullptr.
-@throws Sets error() and wasLastError().
-*/
-QFunctionPointer resolve(const QByteArray &symbol);
+    QLibrary m_libavutil;
+    QLibrary m_libswresample;
+    QLibrary m_libavcodec;
+    QLibrary m_libavformat;
 
-#pragma endregion
-} // namespace VvvfSimulator::Library::FFmpegLoader
+    FunctionMap m_libavutilFuncCache;
+    FunctionMap m_libswresampleFuncCache;
+    FunctionMap m_libavcodecFuncCache;
+    FunctionMap m_libavformatFuncCache;
+
+    unsigned int m_libavutilVer;
+    unsigned int m_libswresampleVer;
+    unsigned int m_libavcodecVer;
+    unsigned int m_libavformatVer;
+};
+} // namespace VvvfSimulator::Library
+
+#endif // LIBRARY__FFMPEGLOADER_HPP
