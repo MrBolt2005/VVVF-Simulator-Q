@@ -2,6 +2,7 @@
 
 // Standard Library
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 // Packages
@@ -31,6 +32,17 @@ namespace VvvfSimulator::Util::String
 		QList<FmtStringArg> args;
 		std::shared_ptr<std::string> disambiguation;
 		int n = -1;
+
+		constexpr TranslatableFmtString() = default;
+		TranslatableFmtString(const TranslatableFmtString &other);
+		TranslatableFmtString(TranslatableFmtString &&other) noexcept;
+		TranslatableFmtString(const QByteArray &source,
+			const std::span<FmtStringArg> &args = {},
+			std::shared_ptr<std::string> disamb = nullptr, int n = -1);
+		~TranslatableFmtString();
+
+		TranslatableFmtString &operator=(const TranslatableFmtString &other);
+		TranslatableFmtString &operator=(TranslatableFmtString &&other) noexcept;
 
 		QString makeTrString() const;
 		QString makeUntrString() const;

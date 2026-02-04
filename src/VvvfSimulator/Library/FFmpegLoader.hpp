@@ -36,7 +36,7 @@ class FFmpegLoader : public QObject {
     // Getters
     QString errorString() const;
     Util::String::TranslatableFmtString errorStringRaw() const;
-    QString errorStringTr() const;
+    QString errorStringUntr() const;
     FunctionMap libavutilFuncCache() const;
     FunctionMap libavcodecFuncCache() const;
     FunctionMap libavformatFuncCache() const;

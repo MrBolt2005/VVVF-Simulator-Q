@@ -74,7 +74,7 @@ void unloadDetail(QLibrary &lib, FFmpegLoader::FunctionMap *cache) {
 
 QString FFmpegLoader::errorString() const {
     DEFAULT_LOCK_PROLOGUE
-    return m_errStr.makeUntrString();
+    return m_errStr.makeTrString();
 }
 
 Util::String::TranslatableFmtString FFmpegLoader::errorStringRaw() const {
@@ -82,9 +82,9 @@ Util::String::TranslatableFmtString FFmpegLoader::errorStringRaw() const {
     return m_errStr;
 }
 
-QString FFmpegLoader::errorStringTr() const {
+QString FFmpegLoader::errorStringUntr() const {
     DEFAULT_LOCK_PROLOGUE
-    return m_errStr.makeTrString();
+    return m_errStr.makeUntrString();
 }
 
 FFmpegLoader::FunctionMap FFmpegLoader::libavutilFuncCache() const {

@@ -9,14 +9,49 @@
  */
 
 // Packages
-#include <libavutil/error.h>
 #include <QDebug>
 #include <QMutexLocker>
+#include <libavutil/error.h>
 
 #define DEFAULT_LOCK_PROLOGUE QMutexLocker locker(&m_lock);
 #define LOCK_AND_RETURN(x) DEFAULT_LOCK_PROLOGUE return x;
+#define SET_IF_PTR(ptr, val) if (ptr) *ptr = val;
 
 namespace VvvfSimulator::Generation {
+    
+bool IWriter::isErrorLast() const {
+    LOCK_AND_RETURN(m_isErrorLast)
+}
+    
+IWriter::CLoaderPtr IWriter::loader() const {
+    LOCK_AND_RETURN(m_loader)
+}
+    
+QUrl IWriter::url() const {
+    LOCK_AND_RETURN(m_url)
+}
+
+void IWriter::setUrl(const QUrl &url, boost::logic::tribool *ok) {
+    DEFAULT_LOCK_PROLOGUE
+    
+    if (url == m_url) {
+        SET_IF_PTR(ok, boost::logic::indeterminate)
+        return;
+    }
+
+    using namespace Qt::Literals::StringLiterals;
+    if (m_isOpen) {
+        Util::String::TranslatableFmtString error;
+        error.sourceText = "Could not set file path: writer must be closed."_ba;
+        m_err = std::move(error);
+        SET_IF_PTR(ok, false)
+        return;
+    }
+
+    m_url = url;
+    SET_IF_PTR(ok, true)
+}
+
 void IWriter::close(bool failOnError, boost::logic::tribool *ok){
     LOCK_AND_RETURN(closeLockless(failOnError, ok))}
 
@@ -27,9 +62,12 @@ IWriter::IWriter(QObject *parent)
     , m_loader()
     , m_isErrorLast()
     , m_isOpen()
-    , m_localFuncCache() {}
+    , m_localFuncCache()
+    , m_url() {}
 
-IWriter::~IWriter() = default;
+IWriter::~IWriter() {
+    close(false);
+}
 
 QString IWriter::avStrerrorAsQString(int err, IWriter::AvStrerrorType func) {
     QString retVal;
@@ -60,7 +98,7 @@ IWriter::resolveOrSetErrorLockless(const QByteArray &symbol,
     return retVal;
 }
 
-boost::logic::tribool IWriter::setLoaderDetail(
+boost::logic::tribool IWriter::setLoaderDetailLockless(
     LoaderPtr loader,
     const std::span<IWriter::EagerLoadTableEntry> &loadTable) {
     if (m_loader == loader) {
@@ -90,9 +128,9 @@ boost::logic::tribool IWriter::setLoaderDetail(
         cache.reserve(loadTable.size());
         for (const auto &it : loadTable) {
             auto &sym = it.first;
-            auto &sel = it.second;
+            auto &from = it.second;
             auto funcPtr =
-                resolveOrSetErrorLockless(sym, sel, *loaderCopy.get());
+                resolveOrSetErrorLockless(sym, from, *loaderCopy.get());
             if (!funcPtr)
                 return false;
             cache.emplace(sym, funcPtr);
@@ -106,4 +144,6 @@ boost::logic::tribool IWriter::setLoaderDetail(
 }
 } // namespace VvvfSimulator::Generation
 
+#undef SET_IF_PTR
+#undef LOCK_AND_RETURN
 #undef DEFAULT_LOCK_PROLOGUE

@@ -14,6 +14,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QPair>
+#include <QUrl>
 #include <boost/logic/tribool.hpp>
 // Internal
 #include "../Library/FFmpegLoader.hpp"
@@ -25,15 +26,26 @@ class IWriter : public QObject {
   public:
     using FFmpegLoader = Library::FFmpegLoader;
     using LoaderPtr = std::shared_ptr<FFmpegLoader>;
+    using CLoaderPtr = std::shared_ptr<const FFmpegLoader>;
 
     QString errorString() const;
     Util::String::TranslatableFmtString errorStringRaw() const;
     QString errorStringUntr() const;
     bool isErrorLast() const;
-    bool isLoader() const;
+    CLoaderPtr loader() const;
+    QUrl url() const;
+
+    bool isLoaderSet() const;
 
   public slots:
+    // Setters
+    void setUrl(const QUrl &url, boost::logic::tribool *ok = nullptr);
+
     void close(bool failOnError, boost::logic::tribool *ok = nullptr);
+
+    virtual void open(const QUrl *url = nullptr,
+                      boost::logic::tribool *ok = nullptr) = 0;
+
     /*
      * @brief Object must be closed (!isOpen()), or this function will fail.
      * @param loader The object's FFmpeg library loader will be set to this.
@@ -70,8 +82,8 @@ class IWriter : public QObject {
                                                FFmpegLoader &loader);
     using EagerLoadTableEntry = QPair<QByteArray, FFmpegLoader::Libraries>;
     boost::logic::tribool
-    setLoaderDetail(LoaderPtr loader,
-                    const std::span<EagerLoadTableEntry> &loadTable);
+    setLoaderDetailLockless(LoaderPtr loader,
+                            const std::span<EagerLoadTableEntry> &loadTable);
 #pragma endregion
 
 #pragma region Members
@@ -80,6 +92,7 @@ class IWriter : public QObject {
     LoaderPtr m_loader;
     bool m_isErrorLast, m_isOpen;
     FunctionMap m_localFuncCache;
+    QUrl m_url;
 #pragma endregion
 };
 } // namespace VvvfSimulator::Generation

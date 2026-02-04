@@ -7,24 +7,65 @@
 
 namespace VvvfSimulator::Util::String
 {
-	QString TranslatableFmtString::makeTrString() const
-	{
-		auto &disamb = disambiguation;
-		const auto maybeDisambig = disamb ? disamb->c_str() : nullptr;
-		QString trStr = QObject::tr(sourceText, maybeDisambig, n);
-		for (const auto &arg : args)
-		{
-			if (const auto x = std::get_if<QString>(&arg.a); x)
-				trStr = trStr.arg(*x, arg.fieldWidth, arg.fillChar);
-			else // TranslatableFmtString
-				trStr = trStr.arg(
-				std::get<TranslatableFmtString>(arg.a).makeTrString(),
-				arg.fieldWidth, arg.fillChar
-			);
-		}
-		
-		return trStr;
-	}
+TranslatableFmtString::TranslatableFmtString(
+    const TranslatableFmtString &other)
+	: sourceText(other.sourceText) 
+	, args(other.args)
+	, disambiguation(other.disambiguation)
+	, n(other.n) {}
+
+TranslatableFmtString::TranslatableFmtString(
+    TranslatableFmtString &&other) noexcept
+	: sourceText(std::move(other.sourceText)) 
+	, args(std::move(other.args))
+	, disambiguation(std::move(other.disambiguation))
+	, n(std::move(other.n)) {}
+
+TranslatableFmtString::TranslatableFmtString(
+    const QByteArray &source, const std::span<FmtStringArg> &args,
+    std::shared_ptr<std::string> disamb, int n)
+	: sourceText(source) 
+	, args(args.begin(), args.end())
+	, disambiguation(std::move(disamb))
+	, n(n) {}
+
+TranslatableFmtString::~TranslatableFmtString() = default;
+
+TranslatableFmtString &
+TranslatableFmtString::operator=(const TranslatableFmtString &other) {
+    sourceText = other.sourceText;
+	args = other.args;
+	disambiguation = other.disambiguation;
+	n = other.n;
+
+	return *this;
+}
+
+TranslatableFmtString &
+TranslatableFmtString::operator=(TranslatableFmtString &&other) noexcept {
+    sourceText = std::move(other.sourceText);
+	args = std::move(other.args);
+	disambiguation = std::move(other.disambiguation);
+	n = std::move(other.n);
+
+	return *this;
+}
+
+QString TranslatableFmtString::makeTrString() const {
+    auto &disamb = disambiguation;
+    const auto maybeDisambig = disamb ? disamb->c_str() : nullptr;
+    QString trStr = QObject::tr(sourceText, maybeDisambig, n);
+    for (const auto &arg : args) {
+        if (const auto x = std::get_if<QString>(&arg.a); x)
+            trStr = trStr.arg(*x, arg.fieldWidth, arg.fillChar);
+        else // TranslatableFmtString
+            trStr =
+                trStr.arg(std::get<TranslatableFmtString>(arg.a).makeTrString(),
+                          arg.fieldWidth, arg.fillChar);
+    }
+
+    return trStr;
+}
 
 	QString TranslatableFmtString::makeUntrString() const
 	{
