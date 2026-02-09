@@ -84,6 +84,17 @@ QString TranslatableFmtString::makeTrString() const {
 		return str;
 	}
 
+	void TranslatableFmtString::reset() noexcept
+	{
+		static_assert(std::is_nothrow_default_constructible_v<QByteArray>);
+		static_assert(std::is_nothrow_default_constructible_v<decltype(args)>);
+
+		sourceText = QByteArray();
+		args = decltype(args)();
+		disambiguation.reset();
+		n = -1;
+	}
+
 	QString filterCases(
 		QString s,
 		ChangeCases cases,
@@ -120,7 +131,7 @@ QString TranslatableFmtString::makeTrString() const {
 			}
 			catch (const std::bad_variant_access &ex)
 			{
-				qWarning() << ex.what();
+				qWarning() << qTr("Exception thrown:") << ex.what();
 			}
 
 			return true;

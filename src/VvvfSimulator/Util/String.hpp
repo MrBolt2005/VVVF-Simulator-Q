@@ -25,6 +25,8 @@ namespace VvvfSimulator::Util::String
 	class TranslatableFmtString
 	{
 		Q_GADGET
+		// Consider replacing sourceText from QByteArray to QString?
+		Q_PROPERTY(QString sourceTextStr READ sourceTextStr WRITE setSourceTextStr)
 		Q_PROPERTY(QList<FmtStringArg> args ATTRIBUTE args)
 
 	public:
@@ -46,6 +48,10 @@ namespace VvvfSimulator::Util::String
 
 		QString makeTrString() const;
 		QString makeUntrString() const;
+
+		void reset() noexcept;
+		QString sourceTextStr() const { return QString(sourceText); }
+		void setSourceTextStr(const QStringView &str) { sourceText = str.toUtf8(); }
 	};
 
 	#define TEMP sizeof(TranslatableFmtString)

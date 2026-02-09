@@ -15,25 +15,23 @@
 
 #define DEFAULT_LOCK_PROLOGUE QMutexLocker locker(&m_lock);
 #define LOCK_AND_RETURN(x) DEFAULT_LOCK_PROLOGUE return x;
-#define SET_IF_PTR(ptr, val) if (ptr) *ptr = val;
+#define SET_IF_PTR(ptr, val)                                                   \
+    if (ptr)                                                                   \
+        *ptr = val;
 
 namespace VvvfSimulator::Generation {
-    
-bool IWriter::isErrorLast() const {
-    LOCK_AND_RETURN(m_isErrorLast)
-}
-    
-IWriter::CLoaderPtr IWriter::loader() const {
-    LOCK_AND_RETURN(m_loader)
-}
-    
+
+bool IWriter::isErrorLast() const {LOCK_AND_RETURN(m_isErrorLast)}
+
+IWriter::CLoaderPtr IWriter::loader() const {LOCK_AND_RETURN(m_loader)}
+
 QUrl IWriter::url() const {
     LOCK_AND_RETURN(m_url)
 }
 
 void IWriter::setUrl(const QUrl &url, boost::logic::tribool *ok) {
     DEFAULT_LOCK_PROLOGUE
-    
+
     if (url == m_url) {
         SET_IF_PTR(ok, boost::logic::indeterminate)
         return;
@@ -69,20 +67,19 @@ IWriter::~IWriter() {
     close(false);
 }
 
-QString IWriter::avStrerrorAsQString(int err, IWriter::AvStrerrorType func) {
-    QString retVal;
+std::optional<QString>
+IWriter::avStrerrorAsQString(int err, const IWriter::AvStrerrorType func) {
     if (func) {
         std::array<char, AV_ERROR_MAX_STRING_SIZE + 1> buf;
         std::memset(buf.data(), 0, buf.size() * sizeof(buf[0]));
         int eCode = func(err, buf.data(), buf.size());
         if (eCode != 0)
             qWarning() << qTr("av_strerror error: %1").arg(eCode);
-        retVal = QString(buf.data());
-    } else {
-        qCritical() << qTr("The passed (%1) function pointer is null.")
-                           .arg("av_strerror");
-    }
-    return retVal;
+        return QString(buf.data());
+    } // else
+    qCritical()
+        << qTr("The passed (%1) function pointer is null.").arg("av_strerror");
+    return std::nullopt;
 }
 
 QFunctionPointer

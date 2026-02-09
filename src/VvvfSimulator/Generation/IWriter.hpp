@@ -10,6 +10,8 @@
  * v1.10.0.1
  */
 
+// Standard Library
+#include <optional>
 // Packages
 #include <QMutex>
 #include <QObject>
@@ -72,7 +74,8 @@ class IWriter : public QObject {
 
 #pragma region Convenience Parsers
     using AvStrerrorType = int (*)(int, char *, size_t);
-    static QString avStrerrorAsQString(int err, AvStrerrorType func);
+    static std::optional<QString>
+    avStrerrorAsQString(int err, const AvStrerrorType func);
 #pragma endregion
 
 #pragma region Loading Implementation
