@@ -29,6 +29,7 @@ class AudioWriter : public IWriter {
   public slots:
     void open(const QUrl *url = nullptr,
               boost::logic::tribool *ok = nullptr) override;
+    void write(const std::span<uint8_t> &in, boost::logic::tribool *ok = nullptr);
 
   protected:
     void closeLockless(bool failOnError, boost::logic::tribool *ok) override;

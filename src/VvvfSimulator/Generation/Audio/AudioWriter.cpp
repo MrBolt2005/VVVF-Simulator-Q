@@ -204,6 +204,53 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
     }
 }
 
+void AudioWriter::write(const std::span<uint8_t> &in,
+                        boost::logic::tribool *ok) {
+    DEFAULT_LOCK_PROLOGUE
+    using namespace Qt::Literals::StringLiterals;
+    AudioWriterPrivate awp(this);
+
+    if (!m_isOpen) {
+        m_err.reset();
+        // TODO
+        m_isErrorLast = true;
+        SET_IF_PTR(ok, false);
+        return;
+    }
+
+    auto _av_get_bytes_per_sample = GET_AND_CAST_FUNC(av_get_bytes_per_sample);
+    auto _av_frame_alloc = GET_AND_CAST_FUNC(av_frame_alloc);
+    auto _av_frame_get_buffer = GET_AND_CAST_FUNC(av_frame_get_buffer);
+
+    // Check if byte count of the input is
+    // an integer multiple of the sample byte depth
+    int depth = av_get_bytes_per_sample(m_smplFmt);
+    if (depth <= 0) {
+        m_err.reset();
+        m_err.sourceText =
+            "Could not determine a valid bytes-per-sample (depth) count "
+            "for the currently set sample format."_ba;
+        m_isErrorLast = true;
+        SET_IF_PTR(ok, false);
+        return;
+    }
+
+    size_t smplCount = in.size() / depth;
+    if (in.size() % depth != 0) {
+        m_err.reset();
+        m_err.sourceText =
+            "Input data's size must be a multiple of the set sample format's "
+            "bytes-per-sample (depth) count (of %1)."_ba;
+        m_err.args << {QString::number(depth)};
+        m_isErrorLast = true;
+        SET_IF_PTR(ok, false);
+        return;
+    }
+
+    AVFrame *frame = _av_frame_alloc();
+    if (!frame);
+}
+
 void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
     // using namespace Qt::Literals::StringLiterals;
     if (m_isOpen) {
