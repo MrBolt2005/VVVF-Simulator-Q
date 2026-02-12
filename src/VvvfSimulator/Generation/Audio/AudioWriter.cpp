@@ -219,8 +219,10 @@ void AudioWriter::write(const std::span<uint8_t> &in,
     }
 
     auto _av_get_bytes_per_sample = GET_AND_CAST_FUNC(av_get_bytes_per_sample);
+    auto _av_sample_fmt_is_planar = GET_AND_CAST_FUNC(av_sample_fmt_is_planar);
     auto _av_frame_alloc = GET_AND_CAST_FUNC(av_frame_alloc);
     auto _av_frame_get_buffer = GET_AND_CAST_FUNC(av_frame_get_buffer);
+    auto _av_frame_make_writable = GET_AND_CAST_FUNC(av_frame_make_writable);
 
     // Check if byte count of the input is
     // an integer multiple of the sample byte depth
@@ -235,13 +237,16 @@ void AudioWriter::write(const std::span<uint8_t> &in,
         return;
     }
 
-    size_t smplCount = in.size() / depth;
-    if (in.size() % depth != 0) {
+    int isPlanar = _av_sample_fmt_is_planar(m_smplFmt);
+    size_t multiplier = depth * m_channels;
+
+    size_t smplCount = in.size() / multiplier;
+    if (in.size() % multiplier != 0) {
         m_err.reset();
-        m_err.sourceText =
+        m_err.sourceText = // TODO
             "Input data's size must be a multiple of the set sample format's "
             "bytes-per-sample (depth) count (of %1)."_ba;
-        m_err.args << {QString::number(depth)};
+        m_err.args << {QString::number(multiplier)};
         m_isErrorLast = true;
         SET_IF_PTR(ok, false);
         return;
@@ -249,6 +254,25 @@ void AudioWriter::write(const std::span<uint8_t> &in,
 
     AVFrame *frame = _av_frame_alloc();
     if (!frame);
+
+    frame->format = m_smplFmt;
+    frame->sample_rate = m_smplRate;
+    frame->nb_samples = smplCount;
+
+    int eCode = _av_frame_get_buffer(frame, 0);
+    if (eCode != 0);
+
+    eCode = _av_frame_make_writable(frame);
+    if (eCode != 0);
+
+    // Copy samples
+    size_t planeByteCount = smplCount * depth;
+    if (isPlanar) {
+        for (int ch = 0; ch < m_channels; ch++)
+            std::memcpy(frame->data[ch], in.data() + planeByteCount * ch, planeByteCount);
+    } else {
+        std::memcpy(frame->data[0], in.data(), planeByteCount);
+    }
 }
 
 void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
