@@ -32,7 +32,7 @@ namespace VvvfSimulator::Util::String
 	public:
 		QByteArray sourceText;
 		QList<FmtStringArg> args;
-		std::shared_ptr<std::string> disambiguation;
+		std::shared_ptr<std::string> disambiguation; // consider switching to QByteArray
 		int n = -1;
 
 		constexpr TranslatableFmtString() = default;
@@ -69,6 +69,10 @@ namespace VvvfSimulator::Util::String
 		int fieldWidth = 0;
 		QChar fillChar{};
 		QVariant id;
+
+		FmtStringArg();
+		FmtStringArg(const QString &str);
+		FmtStringArg(QString &&str);
 	};
 
 	enum class ChangeCases

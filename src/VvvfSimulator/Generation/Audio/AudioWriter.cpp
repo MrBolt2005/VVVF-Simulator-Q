@@ -43,34 +43,38 @@ class AudioWriterPrivate {
 void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
     DEFAULT_LOCK_PROLOGUE
     using namespace Qt::Literals::StringLiterals;
-    AudioWriterPrivate awp(this);
 
     if (m_isOpen) {
         SET_IF_PTR(ok, boost::logic::indeterminate)
         return;
     }
-
-    const QUrl *currUrl = url ? url : &m_url;
-
-    // Fetch cached functions
-    auto _avformat_alloc_context = GET_AND_CAST_FUNC(avformat_alloc_context);
-    /*
-     * avformat_network_init is going to be deprecated in the foreseeable
-     * future, so we should be safe skipping it~
-     */
-    auto _av_strdup = GET_AND_CAST_FUNC(av_strdup);
-    auto _avformat_free_context = GET_AND_CAST_FUNC(avformat_free_context);
-    auto _avcodec_alloc_context3 = GET_AND_CAST_FUNC(avcodec_alloc_context3);
-    auto _avcodec_free_context = GET_AND_CAST_FUNC(avcodec_free_context);
-    auto _avformat_new_stream = GET_AND_CAST_FUNC(avformat_new_stream);
-    auto _av_dict_copy = GET_AND_CAST_FUNC(av_dict_copy);
-    auto _av_dict_set = GET_AND_CAST_FUNC(av_dict_set);
-    auto _av_dict_free = GET_AND_CAST_FUNC(av_dict_free);
-    auto _av_strerror = GET_AND_CAST_FUNC(av_strerror);
+    AudioWriterPrivate awp(this);
 
     AVDictionary *optsCopy = nullptr;
+
+    // Fetch cached functions
+    auto _av_dict_free = GET_AND_CAST_FUNC(av_dict_free);
+    auto _avcodec_free_context = GET_AND_CAST_FUNC(avcodec_free_context);
+    auto _avformat_free_context = GET_AND_CAST_FUNC(avformat_free_context);
+
     // Util::String::TranslatableFmtString error;
     try {
+        const QUrl *currUrl = url ? url : &m_url;
+
+        auto _avformat_alloc_context =
+            GET_AND_CAST_FUNC(avformat_alloc_context);
+        /*
+         * avformat_network_init is going to be deprecated in the foreseeable
+         * future, so we should be safe skipping it~
+         */
+        auto _av_strdup = GET_AND_CAST_FUNC(av_strdup);
+        auto _avcodec_alloc_context3 =
+            GET_AND_CAST_FUNC(avcodec_alloc_context3);
+        auto _avformat_new_stream = GET_AND_CAST_FUNC(avformat_new_stream);
+        auto _av_dict_copy = GET_AND_CAST_FUNC(av_dict_copy);
+        auto _av_dict_set = GET_AND_CAST_FUNC(av_dict_set);
+        auto _av_strerror = GET_AND_CAST_FUNC(av_strerror);
+
         // Initialize AVFormatContext
         m_fmtCtx = _avformat_alloc_context();
         if (!m_fmtCtx) {
@@ -111,6 +115,8 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         // m_codecCtx->codec = m_codec;
         m_codecCtx->flags = m_flags;
         m_codecCtx->flags2 = m_flags2;
+        m_codecCtx->time_base.num = 1;
+        m_codecCtx->time_base.den = m_smplRate;
         // Audio-specific codec ctx. initialization
         // TODO: Correct this following line
         m_codecCtx->ch_layout = *m_channelLyt;
@@ -130,12 +136,12 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         } else {
             eCode = _av_dict_set(nullptr, nullptr, nullptr, 0);
         }
-        if (eCode != 0) {
+        if (eCode < 0) {
             m_err.reset();
             m_err.sourceText =
                 "Failed to set up the audio writer's options: %1"_ba;
-            m_err.args << {avStrerrorAsQString(eCode, _av_strerror)
-                     .value_or(qTr(UNKNOWN_ERR_CSTR))});
+            m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                              .value_or(qTr(UNKNOWN_ERR_CSTR));
             m_isErrorLast = true;
             SET_IF_PTR(ok, false);
             return;
@@ -146,42 +152,46 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
             m_err.reset();
             m_err.sourceText =
                 "Failed to initialize the audio writer's output: %1"_ba;
-            m_err.args << {avStrerrorAsQString(eCode, _av_strerror)
-                     .value_or(qTr(UNKNOWN_ERR_CSTR))});
+            m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                              .value_or(qTr(UNKNOWN_ERR_CSTR));
             m_isErrorLast = true;
             SET_IF_PTR(ok, false);
             return;
         } else if (eCode == AVSTREAM_INIT_IN_WRITE_HEADER) {
             qDebug().nospace()
-                << "avformat_init_output() -> AVSTREAM_INIT_IN_WRITE_HEADER ("
-                << eCode << ')';
+                << QStringView(u"avformat_init_output() -> "
+                               u"AVSTREAM_INIT_IN_WRITE_HEADER (")
+                << eCode << u')';
         } else if (eCode == AVSTREAM_INIT_IN_INIT_OUTPUT) {
-            qDebug().nospace()
-                << "avformat_init_output() -> AVSTREAM_INIT_IN_INIT_OUTPUT ("
-                << eCode << ')';
+            qDebug().nospace() << QStringView(u"avformat_init_output() -> "
+                                              u"AVSTREAM_INIT_IN_INIT_OUTPUT (")
+                               << eCode << u')';
         }
         eCode = avformat_write_header(m_fmtCtx, nullptr);
         if (eCode < 0) {
             m_err.reset();
             m_err.sourceText =
                 "Failed to write the file header on the audio writer's output: %1"_ba;
-            m_err.args << {avStrerrorAsQString(eCode, _av_strerror)
-                               .value_or(qTr(UNKNOWN_ERR_CSTR))};
+            m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                              .value_or(qTr(UNKNOWN_ERR_CSTR));
             m_isErrorLast = true;
             SET_IF_PTR(ok, false);
             return;
         } else if (eCode == AVSTREAM_INIT_IN_WRITE_HEADER) {
             qDebug().nospace()
-                << "avformat_write_header() -> AVSTREAM_INIT_IN_WRITE_HEADER ("
-                << eCode << ')';
+                << QStringView(u"avformat_write_header() -> "
+                               u"AVSTREAM_INIT_IN_WRITE_HEADER (")
+                << eCode << u')';
         } else if (eCode == AVSTREAM_INIT_IN_INIT_OUTPUT) {
-            qDebug().nospace()
-                << "avformat_write_header() -> AVSTREAM_INIT_IN_INIT_OUTPUT ("
-                << eCode << ')';
+            qDebug().nospace() << QStringView(u"avformat_write_header() -> "
+                                              u"AVSTREAM_INIT_IN_INIT_OUTPUT (")
+                               << eCode << u')';
         }
 
         m_isErrorLast = false;
         m_isOpen = true;
+        if (currUrl != &m_url)
+            m_url = *currUrl;
         SET_IF_PTR(ok, true);
     } catch (const std::exception &ex) {
         if (optsCopy) {
@@ -198,81 +208,181 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
 
         m_err.reset();
         m_err.sourceText = "Exception thrown: %1"_ba;
-        m_err.args << {ex.what()};
         m_isErrorLast = true;
+        m_err.args << QString(ex.what());
         SET_IF_PTR(ok, false);
     }
 }
 
-void AudioWriter::write(const std::span<uint8_t> &in,
-                        boost::logic::tribool *ok) {
+void AudioWriter::write(const std::span<uint8_t> &in, bool *ok) {
     DEFAULT_LOCK_PROLOGUE
     using namespace Qt::Literals::StringLiterals;
     AudioWriterPrivate awp(this);
 
-    if (!m_isOpen) {
-        m_err.reset();
-        // TODO
-        m_isErrorLast = true;
-        SET_IF_PTR(ok, false);
-        return;
-    }
+    int eCode, depth, isPlanar;
+    size_t multiplier, smplCount, smplPerChCount;
+    AVFrame *frame;
+    AVPacket *packet = nullptr;
 
     auto _av_get_bytes_per_sample = GET_AND_CAST_FUNC(av_get_bytes_per_sample);
     auto _av_sample_fmt_is_planar = GET_AND_CAST_FUNC(av_sample_fmt_is_planar);
     auto _av_frame_alloc = GET_AND_CAST_FUNC(av_frame_alloc);
     auto _av_frame_get_buffer = GET_AND_CAST_FUNC(av_frame_get_buffer);
+    auto _av_frame_free = GET_AND_CAST_FUNC(av_frame_free);
+    auto _av_strerror = GET_AND_CAST_FUNC(av_strerror);
     auto _av_frame_make_writable = GET_AND_CAST_FUNC(av_frame_make_writable);
+    auto _avcodec_send_frame = GET_AND_CAST_FUNC(avcodec_send_frame);
+    auto _avcodec_receive_packet = GET_AND_CAST_FUNC(avcodec_receive_packet);
+    auto _av_packet_rescale_ts = GET_AND_CAST_FUNC(av_packet_rescale_ts);
+    auto _av_interleaved_write_frame =
+        GET_AND_CAST_FUNC(av_interleaved_write_frame);
+    auto _av_packet_unref = GET_AND_CAST_FUNC(av_packet_unref);
+    auto _av_packet_free = GET_AND_CAST_FUNC(av_packet_free);
 
-    // Check if byte count of the input is
-    // an integer multiple of the sample byte depth
-    int depth = av_get_bytes_per_sample(m_smplFmt);
+    if (!m_isOpen) {
+        m_err.reset();
+        m_err.sourceText = "Audio writer must be open before writing."_ba;
+        goto failBeforeFrameAlloc;
+    }
+
+    depth = av_get_bytes_per_sample(m_smplFmt);
     if (depth <= 0) {
         m_err.reset();
         m_err.sourceText =
             "Could not determine a valid bytes-per-sample (depth) count "
             "for the currently set sample format."_ba;
-        m_isErrorLast = true;
-        SET_IF_PTR(ok, false);
-        return;
+        goto failBeforeFrameAlloc;
     }
 
-    int isPlanar = _av_sample_fmt_is_planar(m_smplFmt);
-    size_t multiplier = depth * m_channels;
+    isPlanar = _av_sample_fmt_is_planar(m_smplFmt);
+    // Check if byte count of the input is an integer multiple of the sample
+    // byte depth times the number of channels
+    multiplier = depth * m_channels;
 
-    size_t smplCount = in.size() / multiplier;
+    smplCount = in.size() / depth;
+    smplPerChCount = in.size() / multiplier;
     if (in.size() % multiplier != 0) {
         m_err.reset();
         m_err.sourceText = // TODO
             "Input data's size must be a multiple of the set sample format's "
-            "bytes-per-sample (depth) count (of %1)."_ba;
-        m_err.args << {QString::number(multiplier)};
-        m_isErrorLast = true;
-        SET_IF_PTR(ok, false);
-        return;
+            "bytes-per-sample (depth) count (of %1) times the channel count "
+            "(of %2) (total: %3)."_ba;
+        m_err.args.reserve(3);
+        m_err.args << QString::number(depth) << QString::number(m_channels)
+                   << QString::number(multiplier);
+        goto failBeforeFrameAlloc;
     }
 
-    AVFrame *frame = _av_frame_alloc();
-    if (!frame);
+    frame = _av_frame_alloc();
+    if (!frame) {
+        m_err.reset();
+        m_err.sourceText =
+            "Memory error: failed to initialize the frame for the audio "
+            "writing operation."_ba;
+        goto failBeforeFrameAlloc;
+    }
 
     frame->format = m_smplFmt;
     frame->sample_rate = m_smplRate;
     frame->nb_samples = smplCount;
 
-    int eCode = _av_frame_get_buffer(frame, 0);
-    if (eCode != 0);
+    eCode = _av_frame_get_buffer(frame, 0);
+    if (eCode < 0) {
+        m_err.reset();
+        m_err.sourceText =
+            "Failed to initialize the audio frame's buffer(s): %1"_ba;
+        m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                          .value_or(qTr(UNKNOWN_ERR_CSTR));
+        m_isErrorLast = true;
+        // Let's not forget to free our resources, to avoid leaks!
+        goto failAfterFrameAlloc;
+    }
 
     eCode = _av_frame_make_writable(frame);
-    if (eCode != 0);
+    if (eCode < 0) {
+        m_err.reset();
+        m_err.sourceText =
+            "Failed to assert the audio frame's writeability: %1"_ba;
+        m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                          .value_or(qTr(UNKNOWN_ERR_CSTR));
+        goto failAfterFrameAlloc;
+    }
 
     // Copy samples
-    size_t planeByteCount = smplCount * depth;
+    size_t planeByteCount;
     if (isPlanar) {
+        /*
+         * Memory organization is:
+         * Plane 0: {ch0, ch0, ...}
+         * Plane 1: {ch1, ch1, ...}
+         * ...
+         * Plane N: {chN, chN, ...}
+         */
+        planeByteCount = smplPerChCount * depth;
         for (int ch = 0; ch < m_channels; ch++)
-            std::memcpy(frame->data[ch], in.data() + planeByteCount * ch, planeByteCount);
-    } else {
+            std::memcpy(frame->data[ch], in.data() + planeByteCount * ch,
+                        planeByteCount);
+    } else { // Is packed
+        /*
+         * Memory organization is:
+         * Plane 0: {ch0, ch1, ..., chN, ch0, ch1, ...} (all samples)
+         */
+        planeByteCount = smplCount * depth;
         std::memcpy(frame->data[0], in.data(), planeByteCount);
     }
+
+    // Send written frame to context
+    eCode = _avcodec_send_frame(m_codecCtx, frame);
+    if (eCode < 0) {
+        m_err.reset();
+        m_err.sourceText = "Failed to process/encode audio frame: %1"_ba;
+        m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                          .value_or(qTr(UNKNOWN_ERR_CSTR));
+        goto failAfterFrameAlloc;
+    }
+
+    while (true) {
+        eCode = _avcodec_receive_packet(m_codecCtx, packet);
+        if (eCode == AVERROR_EOF)
+            break;
+        else if (eCode < 0) {
+            m_err.reset();
+            m_err.sourceText =
+                "Failed to receive encoded audio packet(s): %1"_ba;
+            m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                              .value_or(qTr(UNKNOWN_ERR_CSTR));
+            goto failAfterPacketCreation;
+        }
+        packet->stream_index = m_strm->index;
+        _av_packet_rescale_ts(packet, m_codecCtx->time_base, m_strm->time_base);
+
+        eCode = _av_interleaved_write_frame(m_fmtCtx, packet);
+        _av_packet_unref(packet);
+        if (eCode < 0) {
+            m_err.reset();
+            m_err.sourceText =
+                "Failed to write encoded audio packet(s) to output: %1"_ba;
+            m_err.args << avStrerrorAsQString(eCode, _av_strerror)
+                              .value_or(qTr(UNKNOWN_ERR_CSTR));
+            goto failAfterPacketCreation;
+        }
+    }
+
+    if (packet)
+        _av_packet_free(&packet);
+    m_isErrorLast = false;
+    SET_IF_PTR(ok, true);
+    // Success, all done:
+    return;
+
+failAfterPacketCreation:
+    if (packet)
+        _av_packet_free(&packet);
+failAfterFrameAlloc:
+    _av_frame_free(&frame);
+failBeforeFrameAlloc:
+    m_isErrorLast = true;
+    SET_IF_PTR(ok, false);
 }
 
 void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
@@ -298,20 +408,20 @@ void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
 
     if (m_fmtCtx) {
         eCode = _avformat_flush(m_fmtCtx);
-        if (eCode != 0) {
+        if (eCode < 0) {
             QString errorStr = avStrerrorAsQString(eCode, _av_strerror)
                                    .value_or(qTr(UNKNOWN_ERR_CSTR));
             qWarning() << qTr(AVFORMAT_FLUSH_FAIL_CSTR).arg(errorStr);
             if (failOnError) {
                 m_err.reset();
                 m_err.sourceText = QByteArrayLiteral(AVFORMAT_FLUSH_FAIL_CSTR);
-                m_err.args << {std::move(errorStr)};
+                m_err.args << std::move(errorStr);
                 m_isErrorLast = true;
                 return;
             }
         }
         eCode = _av_write_trailer(m_fmtCtx);
-        if (eCode != 0) {
+        if (eCode < 0) {
             QString errorStr = avStrerrorAsQString(eCode, _av_strerror)
                                    .value_or(qTr(UNKNOWN_ERR_CSTR));
             qWarning() << qTr(AV_WRITE_TRAILER_FAIL_CSTR).arg(errorStr);
@@ -319,13 +429,14 @@ void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
                 m_err.reset();
                 m_err.sourceText =
                     QByteArrayLiteral(AV_WRITE_TRAILER_FAIL_CSTR);
-                m_err.args << {std::move(errorStr)};
+                m_err.args << std::move(errorStr);
                 m_isErrorLast = true;
                 return;
             }
         }
         _avcodec_free_context(&m_codecCtx);
         _avformat_free_context(m_fmtCtx);
+        m_pts = 0;
         m_isErrorLast = m_isOpen = false;
     }
 } // namespace VvvfSimulator::Generation::Audio
