@@ -40,7 +40,6 @@ class AudioWriter : public IWriter {
     int64_t m_bitRate;
     int m_brTolerance;
     AVCodec *m_codec;
-    QFileInfo m_file;
     int m_flags, m_flags2;
     AVDictionary *m_opts;
     int m_strict;
