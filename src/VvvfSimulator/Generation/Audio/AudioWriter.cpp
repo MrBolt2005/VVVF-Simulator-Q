@@ -75,27 +75,26 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         auto _av_dict_set = GET_AND_CAST_FUNC(av_dict_set);
         auto _av_strerror = GET_AND_CAST_FUNC(av_strerror);
 
+        QByteArray urlCString;
+
         // Initialize AVFormatContext
         m_fmtCtx = _avformat_alloc_context();
         if (!m_fmtCtx) {
             m_err.reset();
             m_err.sourceText =
                 "Memory error: failed to initialize the audio writer's format context."_ba;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail; // fail2?
         }
 
-        QByteArray urlCString = currUrl->isLocalFile()
-                                    ? currUrl->toLocalFile().toLocal8Bit()
-                                    : currUrl->url().toUtf8();
+        urlCString = currUrl->isLocalFile()
+                         ? currUrl->toLocalFile().toLocal8Bit()
+                         : currUrl->url().toUtf8();
         m_fmtCtx->url = _av_strdup(urlCString);
         if (!m_fmtCtx->url) {
             m_err.reset();
             m_err.sourceText =
                 "Memory error: failed to set URL in the audio writer's format context."_ba;
-            m_isErrorLast = true;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail;
         }
 
         // Initialize AVCodecContext
@@ -104,19 +103,17 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
             m_err.reset();
             m_err.sourceText =
                 "Memory error: failed to initialize the audio writer's codec context."_ba;
-            m_isErrorLast = true;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail;
         }
-        m_codecCtx->bit_rate = m_bitRate;
-        // TODO: Correct this following line
-        m_codecCtx->bit_rate_tolerance =
-            std::abs(m_brRange.first - m_brRange.second);
+        m_codecCtx->bit_rate = m_brRange;
+        m_codecCtx->bit_rate_tolerance = m_brTolerance;
         // m_codecCtx->codec = m_codec;
         m_codecCtx->flags = m_flags;
         m_codecCtx->flags2 = m_flags2;
+        // time base = 1 / sample rate
         m_codecCtx->time_base.num = 1;
         m_codecCtx->time_base.den = m_smplRate;
+
         // Audio-specific codec ctx. initialization
         // TODO: Correct this following line
         m_codecCtx->ch_layout = *m_channelLyt;
@@ -142,9 +139,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
                 "Failed to set up the audio writer's options: %1"_ba;
             m_err.args << avStrerrorAsQString(eCode, _av_strerror)
                               .value_or(qTr(UNKNOWN_ERR_CSTR));
-            m_isErrorLast = true;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail;
         }
 
         eCode = avformat_init_output(m_fmtCtx, &optsCopy);
@@ -154,9 +149,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
                 "Failed to initialize the audio writer's output: %1"_ba;
             m_err.args << avStrerrorAsQString(eCode, _av_strerror)
                               .value_or(qTr(UNKNOWN_ERR_CSTR));
-            m_isErrorLast = true;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail;
         } else if (eCode == AVSTREAM_INIT_IN_WRITE_HEADER) {
             qDebug().nospace()
                 << QStringView(u"avformat_init_output() -> "
@@ -174,9 +167,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
                 "Failed to write the file header on the audio writer's output: %1"_ba;
             m_err.args << avStrerrorAsQString(eCode, _av_strerror)
                               .value_or(qTr(UNKNOWN_ERR_CSTR));
-            m_isErrorLast = true;
-            SET_IF_PTR(ok, false);
-            return;
+            goto fail;
         } else if (eCode == AVSTREAM_INIT_IN_WRITE_HEADER) {
             qDebug().nospace()
                 << QStringView(u"avformat_write_header() -> "
@@ -193,6 +184,12 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         if (currUrl != &m_url)
             m_url = *currUrl;
         SET_IF_PTR(ok, true);
+        return;
+
+    fail:
+        m_isErrorLast = true;
+        // fail2:
+        SET_IF_PTR(ok, false);
     } catch (const std::exception &ex) {
         if (optsCopy) {
             _av_dict_free(&optsCopy);
@@ -214,7 +211,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
     }
 }
 
-void AudioWriter::write(const std::span<uint8_t> &in, bool *ok) {
+void AudioWriter::write(const std::span<const uint8_t> &in, bool *ok) {
     DEFAULT_LOCK_PROLOGUE
     using namespace Qt::Literals::StringLiterals;
     AudioWriterPrivate awp(this);
@@ -332,6 +329,7 @@ void AudioWriter::write(const std::span<uint8_t> &in, bool *ok) {
     }
 
     // Send written frame to context
+    frame->pts = m_pts;
     eCode = _avcodec_send_frame(m_codecCtx, frame);
     if (eCode < 0) {
         m_err.reset();
@@ -354,6 +352,9 @@ void AudioWriter::write(const std::span<uint8_t> &in, bool *ok) {
             goto failAfterPacketCreation;
         }
         packet->stream_index = m_strm->index;
+#if 0
+        packet->pts = packet->dts = m_pts;
+#endif // 0
         _av_packet_rescale_ts(packet, m_codecCtx->time_base, m_strm->time_base);
 
         eCode = _av_interleaved_write_frame(m_fmtCtx, packet);
@@ -367,9 +368,12 @@ void AudioWriter::write(const std::span<uint8_t> &in, bool *ok) {
             goto failAfterPacketCreation;
         }
     }
+    m_pts += frame->nb_samples;
 
     if (packet)
         _av_packet_free(&packet);
+    if (frame)
+        _av_frame_free(&frame);
     m_isErrorLast = false;
     SET_IF_PTR(ok, true);
     // Success, all done:
@@ -379,7 +383,8 @@ failAfterPacketCreation:
     if (packet)
         _av_packet_free(&packet);
 failAfterFrameAlloc:
-    _av_frame_free(&frame);
+    if (frame)
+        _av_frame_free(&frame);
 failBeforeFrameAlloc:
     m_isErrorLast = true;
     SET_IF_PTR(ok, false);
@@ -434,11 +439,16 @@ void AudioWriter::closeLockless(bool failOnError, boost::logic::tribool *ok) {
                 return;
             }
         }
-        _avcodec_free_context(&m_codecCtx);
         _avformat_free_context(m_fmtCtx);
-        m_pts = 0;
-        m_isErrorLast = m_isOpen = false;
+        m_fmtCtx = nullptr;
     }
+
+    if (m_codecCtx)
+        _avcodec_free_context(&m_codecCtx);
+
+    m_pts = 0;
+    m_isErrorLast = m_isOpen = false;
+}
 } // namespace VvvfSimulator::Generation::Audio
 
 #undef GET_AND_CAST_FUNC

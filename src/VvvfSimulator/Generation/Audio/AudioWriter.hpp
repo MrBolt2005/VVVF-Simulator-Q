@@ -23,13 +23,12 @@ class AudioWriter : public IWriter {
   public:
     typedef QPair<int64_t, int64_t> BitRateRangeType;
 
-    int64_t bitRate() const;
     BitRateRangeType bitRateRange() const;
 
   public slots:
     void open(const QUrl *url = nullptr,
               boost::logic::tribool *ok = nullptr) override;
-    void write(const std::span<uint8_t> &in, bool *ok = nullptr);
+    void write(const std::span<const uint8_t> &in, bool *ok = nullptr);
 
   protected:
     void closeLockless(bool failOnError, boost::logic::tribool *ok) override;
@@ -39,7 +38,7 @@ class AudioWriter : public IWriter {
 
     // Common parameters
     int64_t m_bitRate;
-    BitRateRangeType m_brRange;
+    int m_brTolerance;
     AVCodec *m_codec;
     QFileInfo m_file;
     int m_flags, m_flags2;
