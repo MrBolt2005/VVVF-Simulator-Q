@@ -1,58 +1,56 @@
 #pragma once
 
-// Standard Library
-#include <cstdlib>
-#include <memory>
+#ifndef GENERATION__UTIL__CIRCULARBUFFER_HPP
+#define GENERATION__UTIL__CIRCULARBUFFER_HPP
+
+/*
+ * Copyright © 2026 VvvfGeeks, VVVF Systems
+ * SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
+ *
+ * Generation/Util/CircularBuffer.hpp
+ * v1.10.0.1
+ */
+
 // Packages
+#include <boost/circular_buffer.hpp>
 #include <QIODevice>
 
-namespace VvvfSimulator::Generation::Util
-{
-	class CircularBuffer : public QIODevice
-	{
-		Q_OBJECT
+namespace VvvfSimulator::Generation::Util {
+class CircularBuffer : public QIODevice {
+    Q_OBJECT
 
-	public:
-		typedef std::ptrdiff_t size_type;
-		Q_PROPERTY(size_type maxSize READ maxSize WRITE setMaxSize)
-		Q_PROPERTY(size_type capacity READ capacity)
-		
-		explicit CircularBuffer(size_type maxSize = 16384, QObject *parent = nullptr);
-		~CircularBuffer() override;
+  public:
+    typedef std::size_t size_type;
+    Q_PROPERTY(size_type capacity READ capacity WRITE setCapacity)
 
-		// QIODevice interface implementation
-		void close() override;
-		bool isSequential() const override;
-		//bool open(OpenMode mode) override;
-		bool reset() override;
-		
-		// Buffer specific methods
-		bool canReadLine() const override;
-		void clear();
-		constexpr size_type maxSize() const noexcept { return m_maxSize; }
-		qint64 bytesAvailable() const override;
-		//qint64 bytesToWrite() const override;
-		
-		// Buffer capacity management
-		constexpr size_type capacity() const noexcept { return m_cap; }
+    explicit CircularBuffer(size_type capacity = 16384,
+                            QObject *parent = nullptr);
+    ~CircularBuffer() override;
 
-	public slots:
-		void setMaxSize(size_type maxSize);
-		void squeeze(); // New method to shrink the buffer to optimal size
-		void shrink_to_fit() { return squeeze(); }
+    // QIODevice interface implementation
+    qint64 bytesAvailable() const override;
+    bool canReadLine() const override;
+    void close() override;
+    bool isSequential() const override;
+    bool reset() override;
 
-	protected:
-		qint64 readData(char *data, qint64 maxlen) override;
-		qint64 writeData(const char *data, qint64 len) override;
+    // Setters / Getters
+    size_type capacity() const;
+    bool
+    setCapacity(size_type cap); // Returns the amount of deleted elements if any
 
-	private:
-		std::unique_ptr<char[], void(*)(void*)> m_buffer;
-		size_type m_cap;       // Current buffer capacity
-		size_type m_readPos;
-		size_type m_writePos;
-		size_type m_byteCount;
-		size_type m_maxSize;   // Maximum allowed size
+    void clear();
 
-		friend struct CircularBufferPrivate; // To not need to declare outline private methods here...
-	};
-}
+  protected:
+    qint64 readData(char *data, qint64 maxlen) override;
+    qint64 writeData(const char *data, qint64 len) override;
+
+    virtual bool isErrorStringLocalizable() const;
+
+  private:
+    boost::circular_buffer<char> m_buffer;
+    // size_type m_readPos, m_writePos;
+};
+} // namespace VvvfSimulator::Generation::Util
+
+#endif // GENERATION__UTIL__CIRCULARBUFFER_HPP

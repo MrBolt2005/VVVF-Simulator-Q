@@ -26,6 +26,7 @@
 namespace VvvfSimulator::Generation::Audio {
 namespace {
 constexpr auto UNKNOWN_ERR_CSTR = "Unknown error.";
+constexpr auto AUDIOWRITER_QUALIFIED_NAME = "VvvfSimulator::Generation::Audio::AudioWriter";
 }
 class AudioWriterPrivate {
   public:
@@ -122,9 +123,13 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         m_codecCtx->strict_std_compliance = m_strict;
 
         // Initialize AVStream
-        m_strm = _avformat_new_stream(m_fmtCtx, m_codecCtx->codec);
-        if (!m_strm)
-            ;
+        m_strm = _avformat_new_stream(m_fmtCtx.get(), m_codecCtx->codec);
+        if (!m_strm) {
+            m_err.reset();
+            m_err.sourceText =
+                "Memory error: failed to initialize the audio writer's stream."_ba;
+            goto fail;
+        }
 
         // Copy the options dictionary
         int eCode;
@@ -142,7 +147,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
             goto fail;
         }
 
-        eCode = avformat_init_output(m_fmtCtx, &optsCopy);
+        eCode = avformat_init_output(m_fmtCtx.get(), &optsCopy);
         if (eCode < 0) {
             m_err.reset();
             m_err.sourceText =
@@ -160,7 +165,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
                                               u"AVSTREAM_INIT_IN_INIT_OUTPUT (")
                                << eCode << u')';
         }
-        eCode = avformat_write_header(m_fmtCtx, nullptr);
+        eCode = avformat_write_header(m_fmtCtx.get(), nullptr);
         if (eCode < 0) {
             m_err.reset();
             m_err.sourceText =
@@ -187,6 +192,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         return;
 
     fail:
+        m_err.context = QByteArrayLiteral(AUDIOWRITER_QUALIFIED_NAME);
         m_isErrorLast = true;
         // fail2:
         SET_IF_PTR(ok, false);
@@ -204,6 +210,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
 
         m_err.reset();
         m_err.sourceText = "Exception thrown: %1"_ba;
+        m_err.context = QByteArrayLiteral(AUDIOWRITER_QUALIFIED_NAME);
         m_isErrorLast = true;
         m_err.args << QString(ex.what());
         SET_IF_PTR(ok, false);
@@ -385,6 +392,7 @@ failAfterFrameAlloc:
     if (frame)
         _av_frame_free(&frame);
 failBeforeFrameAlloc:
+    m_err.context = QByteArrayLiteral(AUDIOWRITER_QUALIFIED_NAME);
     m_isErrorLast = true;
     SET_IF_PTR(ok, false);
 }
