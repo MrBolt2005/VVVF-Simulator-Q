@@ -10,8 +10,11 @@
  * v1.10.0.1
  */
 
+// Standard Library
+#include <memory>
 // Packages
 #include <QPair>
+#include <QSpan>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
@@ -28,13 +31,16 @@ class AudioWriter : public IWriter {
   public slots:
     void open(const QUrl *url = nullptr,
               boost::logic::tribool *ok = nullptr) override;
-    void write(const std::span<const uint8_t> &in, bool *ok = nullptr);
+    void write(QSpan<const uint8_t> in, bool *ok = nullptr);
 
   protected:
     void closeLockless(bool failOnError, boost::logic::tribool *ok) override;
 
   private:
     friend class AudioWriterPrivate;
+
+    typedef decltype(avformat_free_context) *FmtCtxFreeT;
+    typedef std::unique_ptr<AVFormatContext, FmtCtxFreeT> FmtCtxPtrT;
 
     // Common parameters
     int64_t m_bitRate;
@@ -46,15 +52,19 @@ class AudioWriter : public IWriter {
 
     // Audio-specific parameters
     int m_channels;
-    AVChannelLayout *m_channelLyt;
+    AVChannelLayout m_channelLyt;
     AVSampleFormat m_smplFmt;
     int m_smplRate;
 
     // Implementation details
-    AVFormatContext *m_fmtCtx;
+    FmtCtxPtrT m_fmtCtx;
     AVCodecContext *m_codecCtx;
     AVStream *m_strm; // Owned by m_fmtCtx
     int64_t m_pts;
+
+    // Enforce construction with the public constructor **only**
+    AudioWriter() = delete;
+    Q_DISABLE_COPY(AudioWriter)
 
     constexpr auto sizeOf() const noexcept {
         return sizeof(*this);
