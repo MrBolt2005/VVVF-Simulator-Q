@@ -8,6 +8,8 @@
 namespace VvvfSimulator::Util::String {
 TranslatableFmtString::TranslatableFmtString(const TranslatableFmtString &other)
     : sourceText(other.sourceText)
+    , translator(other.translator)
+    , context(other.context)
     , args(other.args)
     , disambiguation(other.disambiguation)
     , n(other.n) {}
@@ -15,23 +17,35 @@ TranslatableFmtString::TranslatableFmtString(const TranslatableFmtString &other)
 TranslatableFmtString::TranslatableFmtString(
     TranslatableFmtString &&other) noexcept
     : sourceText(std::move(other.sourceText))
+    , translator(std::move(other.translator))
+    , context(std::move(other.context))
     , args(std::move(other.args))
     , disambiguation(std::move(other.disambiguation))
     , n(std::move(other.n)) {}
 
 TranslatableFmtString::TranslatableFmtString(
-    const QByteArray &source, const std::span<FmtStringArg> &args,
-    std::shared_ptr<std::string> disamb, int n)
+    const QByteArray &source, QSharedPointer<QTranslator> trnsltr,
+    const QByteArray *ctx, const std::span<FmtStringArg> &args,
+    const QByteArray *disamb, int n)
     : sourceText(source)
+    , translator(std::move(trnsltr))
+    , context()
     , args(args.begin(), args.end())
-    , disambiguation(std::move(disamb))
-    , n(n) {}
+    , disambiguation(/* std::nullopt */)
+    , n(n) {
+    if (ctx)
+        context = *ctx;
+    if (disamb)
+        disambiguation.emplace(*disamb);
+}
 
 TranslatableFmtString::~TranslatableFmtString() = default;
 
 TranslatableFmtString &
 TranslatableFmtString::operator=(const TranslatableFmtString &other) {
     sourceText = other.sourceText;
+    translator = other.translator;
+    context = other.context;
     args = other.args;
     disambiguation = other.disambiguation;
     n = other.n;
@@ -42,6 +56,8 @@ TranslatableFmtString::operator=(const TranslatableFmtString &other) {
 TranslatableFmtString &
 TranslatableFmtString::operator=(TranslatableFmtString &&other) noexcept {
     sourceText = std::move(other.sourceText);
+    translator = std::move(other.translator);
+    context = std::move(other.context);
     args = std::move(other.args);
     disambiguation = std::move(other.disambiguation);
     n = std::move(other.n);
@@ -51,8 +67,11 @@ TranslatableFmtString::operator=(TranslatableFmtString &&other) noexcept {
 
 QString TranslatableFmtString::makeTrString() const {
     auto &disamb = disambiguation;
-    const auto maybeDisambig = disamb ? disamb->c_str() : nullptr;
-    QString trStr = QObject::tr(sourceText, maybeDisambig, n);
+    const auto maybeDisambig = disamb ? disamb->constData() : nullptr;
+    QString trStr = translator
+                        ? translator->translate(context.constData(), sourceText,
+                                                maybeDisambig, n)
+                        : QObject::tr(sourceText, maybeDisambig, n);
     for (const auto &arg : args) {
         if (const auto x = std::get_if<QString>(&arg.a); x)
             trStr = trStr.arg(*x, arg.fieldWidth, arg.fillChar);
@@ -84,6 +103,7 @@ void TranslatableFmtString::reset() noexcept {
     static_assert(std::is_nothrow_default_constructible_v<decltype(args)>);
 
     sourceText = QByteArray();
+    translator.clear();
     args = decltype(args)();
     disambiguation.reset();
     n = -1;
