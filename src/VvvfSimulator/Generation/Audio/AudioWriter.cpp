@@ -116,8 +116,7 @@ void AudioWriter::open(const QUrl *url, boost::logic::tribool *ok) {
         m_codecCtx->time_base.den = m_smplRate;
 
         // Audio-specific codec ctx. initialization
-        // TODO: Correct this following line
-        m_codecCtx->ch_layout = *m_channelLyt;
+        m_codecCtx->ch_layout = m_channelLyt;
         m_codecCtx->sample_fmt = m_smplFmt;
         m_codecCtx->sample_rate = m_smplRate;
         m_codecCtx->strict_std_compliance = m_strict;

@@ -12,8 +12,8 @@
  */
 
 // Packages
-#include <boost/circular_buffer.hpp>
 #include <QIODevice>
+#include <boost/circular_buffer.hpp>
 
 namespace VvvfSimulator::Generation::Util {
 class CircularBuffer : public QIODevice {
@@ -34,10 +34,11 @@ class CircularBuffer : public QIODevice {
     bool isSequential() const override;
     bool reset() override;
 
-    // Setters / Getters
     size_type capacity() const;
-    bool
-    setCapacity(size_type cap); // Returns the amount of deleted elements if any
+
+  public slots:
+    // TODO: Maybe to return the amount of deleted elements if any(?)
+    void setCapacity(size_type cap, bool *ok = nullptr);
 
     void clear();
 

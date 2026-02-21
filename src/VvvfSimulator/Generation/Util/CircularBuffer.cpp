@@ -1,5 +1,18 @@
 #include "CircularBuffer.hpp"
 
+/*
+ * Copyright © 2026 VvvfGeeks, VVVF Systems
+ * SPDX-License-Identifier: Apache-2.0 OR LGPL-3.0-or-later
+ *
+ * Generation/Util/CircularBuffer.cpp
+ * v1.10.0.1
+ */
+
+// Packages
+#include <QDebug>
+#include <QLatin1StringView>
+#include <QString>
+
 namespace VvvfSimulator::Generation::Util {
 CircularBuffer::CircularBuffer(size_type capacity, QObject *parent)
     : QIODevice(parent)
@@ -48,14 +61,17 @@ bool CircularBuffer::reset() {
 #define CIRCULARBUFFER_SETCAPACITY_ERROR                                       \
     "Cannot set/change capacity while device is open."
 
-bool CircularBuffer::setCapacity(size_type cap) {
+void CircularBuffer::setCapacity(size_type cap, bool *ok = nullptr) {
     if (isOpen()) {
         setErrorString(QStringLiteral(CIRCULARBUFFER_SETCAPACITY_ERROR));
         qWarning() << QObject::tr(CIRCULARBUFFER_SETCAPACITY_ERROR);
-        return false;
+        if (ok)
+            *ok = false;
+        return;
     }
     m_buffer.set_capacity(cap);
-    return true;
+    if (ok)
+        *ok = true;
 }
 
 qint64 CircularBuffer::readData(char *data, qint64 maxlen) {

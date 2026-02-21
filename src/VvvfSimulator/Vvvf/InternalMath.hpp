@@ -11,6 +11,7 @@
 #include <span>
 // Packages
 #include <QPointF>
+#include <hwy/base.h>
 // Internal
 // #include "Namespace_VVVF.h"
 
@@ -36,36 +37,63 @@ constexpr double m_SQRT3 = 1.7320508075688772935274463415059;
 constexpr double m_SQRT3_2 = 0.86602540378443864676372317075294;
 
 namespace Functions {
+// Scalar operations
 double triangle(double x) noexcept;
 double saw(double x) noexcept;
-inline auto sine(auto x) { return std::sin(x); }
-inline auto cosine(auto x) { return std::cos(x); }
-inline auto arcSine(auto x) { return std::asin(x); }
+inline auto sine(auto x) {
+    return std::sin(x);
+}
+inline auto cosine(auto x) {
+    return std::cos(x);
+}
+inline auto arcSine(auto x) {
+    return std::asin(x);
+}
 double square(double x) noexcept;
+
+// Batched operations
+/**
+ * @brief Calculates the sine of real numbers in batch, such that
+ * out[idx] = sine(in[idx]), using SIMD operations whenever available/possible.
+ * @param out The output array.
+ * @param in The input array.
+ * @param size The size of both arrays to process.
+ * @returns Nothing. The function reads from the parameter in and writes to the
+ * parameter out.
+ * @throws Should throw nothing.
+ */
+void sineVec(float *HWY_RESTRICT out, const float *HWY_RESTRICT in,
+             std::size_t size);
 } // namespace Functions
 
 namespace EquationSolver {
 typedef std::function<double(double)> Function;
 
 struct NewtonMethod {
-  Function function;
-  double dx{};
+    Function function;
+    double dx{};
 
-  NewtonMethod() = default;
-  NewtonMethod(const Function &func, double Dx) : function(func), dx(Dx) {}
-  NewtonMethod(Function &&func, double Dx) : function(func), dx(Dx) {}
-  
-  double operator()(double begin, double tolerance, unsigned int n);
+    NewtonMethod() = default;
+    NewtonMethod(const Function &func, double Dx)
+        : function(func)
+        , dx(Dx) {}
+    NewtonMethod(Function &&func, double Dx)
+        : function(func)
+        , dx(Dx) {}
+
+    double operator()(double begin, double tolerance, unsigned int n);
 };
 
 struct BisectionMethod {
-  Function function;
+    Function function;
 
-  BisectionMethod() = default;
-  BisectionMethod(const Function &func) : function(func) {}
-  BisectionMethod(Function &&func) : function(func) {}
+    BisectionMethod() = default;
+    BisectionMethod(const Function &func)
+        : function(func) {}
+    BisectionMethod(Function &&func)
+        : function(func) {}
 
-  double operator()(double x0, double x1, double tolerance, unsigned int n);
+    double operator()(double x0, double x1, double tolerance, unsigned int n);
 };
 } // namespace EquationSolver
 
